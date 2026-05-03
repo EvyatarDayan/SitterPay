@@ -1,0 +1,146 @@
+//
+//  SelectBabysitterPopupView.swift
+//  SitterPay
+//
+//  Created for Live Session Select Popup
+//
+
+import SwiftUI
+
+struct SelectBabysitterPopupView: View {
+    @ObservedObject var babysitterManager: BabysitterManager
+    @Binding var babysitterName: String
+    @Binding var hourlyRate: String
+    @Binding var otherPays: String
+    let currencySymbol: String
+    let onDismiss: () -> Void
+    
+    @State private var showAddBabysitter = false
+    @State private var editingBabysitter: Babysitter?
+    
+    var body: some View {
+        NavigationView {
+            Group {
+                if babysitterManager.babysitters.isEmpty {
+                    VStack(spacing: 20) {
+                        Spacer()
+                        Text("no_babysitters".localized)
+                            .font(.title3)
+                            .foregroundColor(.secondary)
+                        
+                        Button(action: {
+                            editingBabysitter = nil
+                            showAddBabysitter = true
+                        }) {
+                            Image("Add")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(Color.appRed)
+                                .cornerRadius(12)
+                        }
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(babysitterManager.babysitters) { babysitter in
+                            Button(action: {
+                                babysitterName = babysitter.name
+                                if let rate = babysitter.hourlyRate {
+                                    hourlyRate = String(format: "%.2f", rate)
+                                }
+                                if let other = babysitter.otherPays {
+                                    otherPays = String(format: "%.2f", other)
+                                }
+                                onDismiss()
+                            }) {
+                                HStack(alignment: .center) {
+                                    Text(babysitter.name)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    if let rate = babysitter.hourlyRate {
+                                        Text("\(currencySymbol)\(String(format: "%.2f", rate))/hr")
+                                            .font(.subheadline)
+                                            .foregroundColor(Color.appRed)
+                                    }
+                                }
+                                .frame(height: 60)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
+                                .background(
+                                    Color(uiColor: UIColor { traitCollection in
+                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
+                                    })
+                                )
+                                .cornerRadius(12)
+                            }
+                            .listRowBackground(Color(.systemGroupedBackground))
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                        }
+                    }
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .navigationTitle("select_babysitter".localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("cancel".localized) {
+                        onDismiss()
+                    }
+                    .foregroundColor(Color.appRed)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        editingBabysitter = nil
+                        showAddBabysitter = true
+                    }) {
+                        Image("Add")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(Color.appRed)
+                    }
+                }
+            }
+            .sheet(isPresented: $showAddBabysitter) {
+                AddEditBabysitterView(
+                    babysitterManager: babysitterManager,
+                    babysitter: nil
+                )
+            }
+            .sheet(item: $editingBabysitter) { babysitter in
+                AddEditBabysitterView(
+                    babysitterManager: babysitterManager,
+                    babysitter: babysitter
+                )
+            }
+            .onAppear {
+                // Reload babysitters when view appears
+                babysitterManager.loadBabysitters()
+            }
+            .onChange(of: showAddBabysitter) { oldValue, newValue in
+                // Reload babysitters when AddEditBabysitterView is dismissed
+                if oldValue && !newValue {
+                    babysitterManager.loadBabysitters()
+                }
+            }
+            .onChange(of: editingBabysitter) { oldValue, newValue in
+                // Reload babysitters when editing is dismissed
+                if oldValue != nil && newValue == nil {
+                    babysitterManager.loadBabysitters()
+                }
+            }
+        }
+    }
+}
