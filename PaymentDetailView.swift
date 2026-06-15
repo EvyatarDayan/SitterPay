@@ -42,28 +42,6 @@ struct PaymentDetailView: View {
         return formatter
     }
     
-    // Format duration from TimeInterval to readable format
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration / 3600)
-        let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
-        
-        var parts: [String] = []
-        if hours > 0 {
-            let hourText = hours == 1 ? "hour".localized : "hours".localized
-            parts.append("\(hours) \(hourText)")
-        }
-        if minutes > 0 {
-            let minuteText = minutes == 1 ? "minute".localized : "minutes".localized
-            parts.append("\(minutes) \(minuteText)")
-        }
-        
-        if parts.isEmpty {
-            return "0 \("minutes".localized)"
-        }
-        
-        return parts.joined(separator: " \("and".localized) ")
-    }
-    
     // Generate PDF from payment record
     private func generatePDF() -> URL? {
         // Use currentRecord (which may have been updated) and selectedTip for accurate data
@@ -127,7 +105,7 @@ struct PaymentDetailView: View {
             yPosition = drawTableRow(label: "time_range".localized, value: timeRangeValue, yPosition: yPosition, leftMargin: leftMargin, tableWidth: tableWidth, rowHeight: rowHeight, cellPadding: cellPadding, cgContext: cgContext)
             
             // Duration row
-            let durationValue = formatDuration(recordToUse.duration)
+            let durationValue = DurationFormat.compact(recordToUse.duration)
             yPosition = drawTableRow(label: "duration".localized, value: durationValue, yPosition: yPosition, leftMargin: leftMargin, tableWidth: tableWidth, rowHeight: rowHeight, cellPadding: cellPadding, cgContext: cgContext)
             yPosition += 20
             
@@ -136,11 +114,11 @@ struct PaymentDetailView: View {
             yPosition = drawSectionTitle(title: paymentTitle, yPosition: yPosition, leftMargin: leftMargin, tableWidth: tableWidth, rowHeight: rowHeight, cellPadding: cellPadding, cgContext: cgContext)
             
             // Pay per Hour row
-            let payPerHourValue = "\(currencySymbol(for: recordToUse.currencyCode))\(String(format: "%.2f", recordToUse.hourlyRate))"
+            let payPerHourValue = PaymentFormat.currency(recordToUse.hourlyRate, symbol: currencySymbol(for: recordToUse.currencyCode))
             yPosition = drawTableRow(label: "pay_per_hour".localized, value: payPerHourValue, yPosition: yPosition, leftMargin: leftMargin, tableWidth: tableWidth, rowHeight: rowHeight, cellPadding: cellPadding, cgContext: cgContext)
             
             // Other Pays row
-            let otherPaysValue = "\(currencySymbol(for: recordToUse.currencyCode))\(String(format: "%.2f", recordToUse.otherPays))"
+            let otherPaysValue = PaymentFormat.currency(recordToUse.otherPays, symbol: currencySymbol(for: recordToUse.currencyCode))
             yPosition = drawTableRow(label: "other_pays".localized, value: otherPaysValue, yPosition: yPosition, leftMargin: leftMargin, tableWidth: tableWidth, rowHeight: rowHeight, cellPadding: cellPadding, cgContext: cgContext)
             
             // Tip row (if tip is selected)
@@ -152,7 +130,7 @@ struct PaymentDetailView: View {
             yPosition += 30
             
             // Total Pay - Bigger and Centered
-            let totalPayValue = "\(currencySymbol(for: recordToUse.currencyCode))\(String(format: "%.2f", totalPayToUse))"
+            let totalPayValue = PaymentFormat.currency(totalPayToUse, symbol: currencySymbol(for: recordToUse.currencyCode))
             let totalAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 32),
                 .foregroundColor: UIColor.systemBlue
@@ -261,6 +239,18 @@ struct PaymentDetailView: View {
         }
     }
     
+    private func detailRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.body)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+                .font(.body)
+                .fontWeight(.medium)
+        }
+    }
+    
     private func saveTip() {
         if hasUnsavedChanges {
             // Save tip
@@ -296,7 +286,7 @@ struct PaymentDetailView: View {
                     .ignoresSafeArea()
                 
                 ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     // Header Card - Babysitter Name and Event
                     VStack(spacing: 16) {
                         VStack(spacing: 4) {
@@ -310,243 +300,88 @@ struct PaymentDetailView: View {
                         
                         Divider()
                         
-                        // Event field
-                        VStack(spacing: 4) {
-                            Text("event".localized)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(selectedEvent?.eventName ?? "")
+                        VStack(spacing: 8) {
+                            CardSectionHeader(title: "event".localized)
+                            Text(selectedEvent?.eventName ?? "—")
                                 .font(.title3)
                                 .fontWeight(.semibold)
                                 .foregroundColor(selectedEvent == nil ? .secondary : .primary)
-                            Button(action: {
-                                showEventSelection = true
-                            }) {
+                            Button(action: { showEventSelection = true }) {
                                 Text("select_event".localized)
                                     .font(.caption)
                                     .foregroundColor(Color.appRed)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
                                     .background(Color.appRed.opacity(0.1))
-                                    .cornerRadius(6)
+                                    .cornerRadius(10)
                             }
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-                    .padding(.horizontal, 16)
-                            .background(
-                                Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                })
-                            )
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.top)
+                    .padding(16)
+                    .calcCardStyle()
                     
                     // Time Details Card
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("time_information".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                    VStack(alignment: .leading, spacing: 12) {
+                        CardSectionHeader(title: "time_information".localized)
                         
+                        detailRow(label: "date".localized, value: dateFormatter.string(from: record.date))
                         Divider()
-                        
-                        VStack(spacing: 0) {
-                            // Date
-                            HStack {
-                                Text("date".localized)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(dateFormatter.string(from: record.date))
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            
-                            Divider()
-                                .padding(.leading, 16)
-                            
-                            // Time Range
-                            HStack {
-                                Text("time_range".localized)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text("\(timeFormatter.string(from: record.startTime)) - \(timeFormatter.string(from: record.endTime))")
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            
-                            Divider()
-                                .padding(.leading, 16)
-                            
-                            // Duration
-                            HStack {
-                                Text("duration".localized)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(formatDuration(record.duration))
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                        }
+                        detailRow(label: "time_range".localized, value: "\(timeFormatter.string(from: record.startTime)) - \(timeFormatter.string(from: record.endTime))")
+                        Divider()
+                        detailRow(label: "duration".localized, value: DurationFormat.compact(record.duration))
                     }
-                            .background(
-                                Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                })
-                            )
-                    .cornerRadius(12)
-                    .padding(.horizontal)
+                    .padding(16)
+                    .calcCardStyle()
                     
                     // Payment Details Card
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("payment_details".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                    VStack(alignment: .leading, spacing: 12) {
+                        CardSectionHeader(title: "payment_details".localized)
                         
+                        detailRow(label: "pay_per_hour".localized, value: PaymentFormat.currency(record.hourlyRate, symbol: currencySymbol(for: record.currencyCode)))
+                        Divider()
+                        detailRow(label: "other_pays".localized, value: PaymentFormat.currency(record.otherPays, symbol: currencySymbol(for: record.currencyCode)))
                         Divider()
                         
-                        VStack(spacing: 0) {
-                            // Pay per Hour
-                            HStack {
-                                Text("pay_per_hour".localized)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text("\(currencySymbol(for: record.currencyCode))\(String(format: "%.2f", record.hourlyRate))")
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                        HStack {
+                            Text("tip".localized)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                            Spacer()
                             
-                            Divider()
-                                .padding(.leading, 16)
-                            
-                            // Other Pays
-                            HStack {
-                                Text("other_pays".localized)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text("\(currencySymbol(for: record.currencyCode))\(String(format: "%.2f", record.otherPays))")
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            
-                            Divider()
-                                .padding(.leading, 16)
-                            
-                            // Tip Selection
-                            HStack {
-                                Text("tip".localized)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                
-                                HStack(spacing: 8) {
+                            HStack(spacing: 8) {
+                                ForEach([5.0, 10.0, 20.0], id: \.self) { tip in
                                     Button(action: {
-                                        if selectedTip == 5 {
-                                            selectedTip = nil
-                                        } else {
-                                            selectedTip = 5
-                                        }
+                                        selectedTip = selectedTip == tip ? nil : tip
                                         hasUnsavedChanges = true
                                     }) {
-                                        Text("5%")
+                                        Text("\(Int(tip))%")
                                             .font(.caption)
-                                            .foregroundColor(selectedTip == 5 ? .white : Color.appRed)
+                                            .foregroundColor(selectedTip == tip ? .white : Color.appRed)
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 6)
-                                            .background(selectedTip == 5 ? Color.appRed : Color.appRed.opacity(0.1))
-                                            .cornerRadius(6)
-                                    }
-                                    
-                                    Button(action: {
-                                        if selectedTip == 10 {
-                                            selectedTip = nil
-                                        } else {
-                                            selectedTip = 10
-                                        }
-                                        hasUnsavedChanges = true
-                                    }) {
-                                        Text("10%")
-                                            .font(.caption)
-                                            .foregroundColor(selectedTip == 10 ? .white : Color.appRed)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(selectedTip == 10 ? Color.appRed : Color.appRed.opacity(0.1))
-                                            .cornerRadius(6)
-                                    }
-                                    
-                                    Button(action: {
-                                        if selectedTip == 20 {
-                                            selectedTip = nil
-                                        } else {
-                                            selectedTip = 20
-                                        }
-                                        hasUnsavedChanges = true
-                                    }) {
-                                        Text("20%")
-                                            .font(.caption)
-                                            .foregroundColor(selectedTip == 20 ? .white : Color.appRed)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(selectedTip == 20 ? Color.appRed : Color.appRed.opacity(0.1))
-                                            .cornerRadius(6)
+                                            .background(selectedTip == tip ? Color.appRed : Color.appRed.opacity(0.1))
+                                            .cornerRadius(10)
                                     }
                                 }
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            
-                            Divider()
-                                .padding(.leading, 16)
-                            
-                            // Total Pay
-                            HStack {
-                                Text("total_pay".localized)
-                                    .font(.body)
-                                    .fontWeight(.semibold)
-                                Spacer()
-                                Text("\(currencySymbol(for: currentRecord.currencyCode))\(String(format: "%.2f", calculatedTotalPay))")
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(Color.appRed)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                        }
+                        
+                        Divider()
+                        
+                        HStack {
+                            Text("total_pay".localized)
+                                .font(.body)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text(PaymentFormat.currency(calculatedTotalPay, symbol: currencySymbol(for: currentRecord.currencyCode)))
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color.appRed)
                         }
                     }
-                            .background(
-                                Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                })
-                            )
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.bottom)
+                    .padding(16)
+                    .calcCardStyle()
                     
                     // Payment Status Toggle
                     HStack(spacing: 12) {
@@ -563,13 +398,9 @@ struct PaymentDetailView: View {
                             Text("payment_status".localized)
                                 .font(.body)
                                 .foregroundColor(.primary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
                             Text(isPaid ? "paid".localized : "pending".localized)
                                 .font(.caption)
-                                .foregroundColor(isPaid ? .green : .blue)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
+                                .foregroundColor(isPaid ? .green : Color.appRed)
                         }
                         
                         Spacer()
@@ -584,17 +415,11 @@ struct PaymentDetailView: View {
                         .labelsHidden()
                         .scaleEffect(0.75)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.bottom)
+                    .padding(16)
+                    .calcCardStyle()
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical)
                 }
             }
             .navigationTitle("payment_details".localized)
@@ -674,27 +499,41 @@ struct EventSelectionView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                ForEach(eventsForDate) { event in
-                    Button(action: {
-                        selectedEvent = event
-                        dismiss()
-                    }) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(event.eventName)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                            if let startTime = event.startTime {
-                                Text(timeFormatter.string(from: startTime))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 16) {
+                        ForEach(eventsForDate) { event in
+                            Button(action: {
+                                selectedEvent = event
+                                dismiss()
+                            }) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(event.eventName)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    if let startTime = event.startTime {
+                                        Text(timeFormatter.string(from: startTime))
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(16)
+                                .calcCardStyle()
                             }
+                            .buttonStyle(.plain)
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical)
                 }
             }
             .navigationTitle("select_event".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("cancel".localized) {

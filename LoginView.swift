@@ -84,11 +84,14 @@ struct LoginView: View {
     
     var body: some View {
         NavigationStack {
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
             ScrollView {
-                VStack(spacing: 0) {
-                    // Tab Selection at Top
-                    VStack(spacing: 0) {
-                        HStack(spacing: 0) {
+                VStack(spacing: 16) {
+                    // Tab Selection
+                    HStack(spacing: 0) {
                             // Sign In Tab
                             Button(action: {
                                 withAnimation {
@@ -145,9 +148,10 @@ struct LoginView: View {
                         .padding(.vertical, 4)
                         .background(Color(.systemGray5))
                         .cornerRadius(10)
-                    }
-                    .padding(.vertical, 16)
+                    .padding(4)
+                    .calcCardStyle()
                     .padding(.horizontal, 16)
+                    .padding(.top, 16)
                     
                     // Header Section
                     Group {
@@ -189,17 +193,10 @@ struct LoginView: View {
                     }
                     
                     // Form Section
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Section Header
-                        Text(isSignUp ? "account_information".localized : "login_information".localized)
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 16)
-                            .padding(.bottom, 8)
+                    VStack(alignment: .leading, spacing: 10) {
+                        CardSectionHeader(title: isSignUp ? "account_information".localized : "login_information".localized)
                         
-                        // Form Fields
-                        VStack(spacing: 0) {
+                        VStack(spacing: 12) {
                             if isSignUp {
                                 HStack(spacing: 12) {
                                     ResponsiveTextField(
@@ -210,10 +207,9 @@ struct LoginView: View {
                                     )
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 44)
-                                    
-                                    Rectangle()
-                                        .fill(Color(.systemGray4))
-                                        .frame(width: 1, height: 20)
+                                    .padding(.horizontal, 12)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(10)
                                     
                                     ResponsiveTextField(
                                         text: $lastName,
@@ -223,15 +219,11 @@ struct LoginView: View {
                                     )
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 44)
+                                    .padding(.horizontal, 12)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(10)
                                 }
-                                .padding()
-                                .background(Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                }))
                                 .id("name-fields")
-                                
-                                Divider()
-                                    .padding(.leading, 16)
                             }
                             
                             ResponsiveTextField(
@@ -241,13 +233,9 @@ struct LoginView: View {
                                 autocapitalizationType: .none
                             )
                             .frame(height: 44)
-                            .padding()
-                            .background(Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            }))
-                            
-                            Divider()
-                                .padding(.leading, 16)
+                            .padding(.horizontal, 12)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
                             
                             HStack {
                                 ResponsiveTextField(
@@ -258,22 +246,16 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)
                                 
-                                Button(action: {
-                                    showPassword.toggle()
-                                }) {
+                                Button(action: { showPassword.toggle() }) {
                                     Image(systemName: showPassword ? "eye.slash" : "eye")
                                         .foregroundColor(.secondary)
                                 }
                             }
-                            .padding()
-                            .background(Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            }))
+                            .padding(.horizontal, 12)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
                             
                             if isSignUp {
-                                Divider()
-                                    .padding(.leading, 16)
-                                
                                 HStack {
                                     ResponsiveTextField(
                                         text: $reenterPassword,
@@ -283,43 +265,36 @@ struct LoginView: View {
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 44)
                                     
-                                    Button(action: {
-                                        showReenterPassword.toggle()
-                                    }) {
+                                    Button(action: { showReenterPassword.toggle() }) {
                                         Image(systemName: showReenterPassword ? "eye.slash" : "eye")
                                             .foregroundColor(.secondary)
                                     }
                                 }
-                                .padding()
-                                .background(Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                }))
+                                .padding(.horizontal, 12)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(10)
                                 .id("reenter-password-field")
                             }
                         }
-                        .background(Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        }))
-                        .cornerRadius(10)
-                        .padding(.horizontal, 16)
-                        .id(isSignUp ? "signup-form" : "signin-form")
                     }
+                    .padding(16)
+                    .calcCardStyle()
+                    .padding(.horizontal, 16)
+                    .id(isSignUp ? "signup-form" : "signin-form")
                     
                     // Action Buttons Section
-                    Button(action: {
-                        handleAuthentication()
-                    }) {
+                    Button(action: { handleAuthentication() }) {
                         Text(isSignUp ? "sign_up".localized : "sign_in".localized)
-                            .font(.headline)
+                            .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(isFormValid ? Color.blue : Color.gray)
-                            .cornerRadius(12)
+                            .frame(height: 56)
+                            .background(isFormValid ? Color.appRed : Color.gray)
+                            .clipShape(Capsule())
                     }
                     .disabled(!isFormValid)
                     .padding(.horizontal, 16)
-                    .padding(.top, 24)
+                    .padding(.top, 8)
                     
                     // Sign in helper text (only shown in sign in tab)
                     if !isSignUp {
@@ -364,10 +339,11 @@ struct LoginView: View {
                     }
                 }
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            }
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()

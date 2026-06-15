@@ -43,10 +43,10 @@ struct SelectBabysitterPopupView: View {
                                 Button(action: {
                                     babysitterName = babysitter.name
                                     if let rate = babysitter.hourlyRate {
-                                        hourlyRate = String(format: "%.2f", rate)
+                                        hourlyRate = PaymentFormat.amount(rate)
                                     }
                                     if let other = babysitter.otherPays {
-                                        otherPays = String(format: "%.2f", other)
+                                        otherPays = PaymentFormat.amount(other)
                                     }
                                     onDismiss()
                                 }) {
@@ -58,7 +58,7 @@ struct SelectBabysitterPopupView: View {
                                         Spacer()
                                         
                                         if let rate = babysitter.hourlyRate {
-                                            Text("\(currencySymbol)\(String(format: "%.2f", rate))/hr")
+                                            Text("\(PaymentFormat.currency(rate, symbol: currencySymbol))/hr")
                                                 .font(.subheadline)
                                                 .foregroundColor(Color.appRed)
                                         }
@@ -66,16 +66,11 @@ struct SelectBabysitterPopupView: View {
                                     .frame(height: 60)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 16)
-                                    .background(
-                                        Color(uiColor: UIColor { traitCollection in
-                                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                        })
-                                    )
-                                    .cornerRadius(12)
+                                    .calcCardStyle()
                                 }
                                 .listRowBackground(Color(.systemGroupedBackground))
                                 .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                                .listRowInsets(EdgeInsets.cardListRow)
                             }
                         }
                         .scrollContentBackground(.hidden)

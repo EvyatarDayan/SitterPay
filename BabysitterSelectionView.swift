@@ -44,17 +44,12 @@ struct BabysitterSelectionView: View {
                                     })
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 16)
-                                    .background(
-                                        Color(uiColor: UIColor { traitCollection in
-                                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                        })
-                                    )
-                                    .cornerRadius(12)
+                                    .calcCardStyle()
                                 }
                                 .buttonStyle(.plain)
                                 .listRowBackground(Color(.systemGroupedBackground))
                                 .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                                .listRowInsets(EdgeInsets.cardListRow)
                             }
                         }
                         .scrollContentBackground(.hidden)

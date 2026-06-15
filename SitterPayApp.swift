@@ -45,7 +45,6 @@ struct SitterPayApp: App {
     
     init() {
         setupAppearance()
-        // Set notification delegate
         UNUserNotificationCenter.current().delegate = notificationDelegate
     }
     

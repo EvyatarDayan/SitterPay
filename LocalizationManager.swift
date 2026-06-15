@@ -147,6 +147,13 @@ class Translations {
             "es": "ej. Alexandra",
             "de": "z.B. Alexandra"
         ],
+        "select_babysitter_placeholder": [
+            "en": "Select a babysitter",
+            "fr": "Sélectionner une baby-sitter",
+            "sv": "Välj en barnvakt",
+            "es": "Seleccionar una niñera",
+            "de": "Babysitter auswählen"
+        ],
         "comments": [
             "en": "Comments",
             "fr": "Commentaires",

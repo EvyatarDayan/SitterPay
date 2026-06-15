@@ -19,53 +19,33 @@ struct AboutView: View {
                     .ignoresSafeArea(.all)
                 
                 ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    // About SitterPay Section
+                VStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("about_sitterpay_title".localized)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                        CardSectionHeader(title: "about_sitterpay_title".localized)
                         
                         Text("about_sitterpay_content".localized)
                             .font(.body)
                             .foregroundColor(.secondary)
                             .lineSpacing(4)
                     }
-                    .padding()
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.top)
+                    .calcCardStyle()
                     
-                    // About ABASHELARI Section
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("about_abashelari_title".localized)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                        CardSectionHeader(title: "about_abashelari_title".localized)
                         
                         Text("about_abashelari_content".localized)
                             .font(.body)
                             .foregroundColor(.secondary)
                             .lineSpacing(4)
                     }
-                    .padding()
+                    .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .padding(.bottom)
+                    .calcCardStyle()
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical)
             }
             }
             .navigationTitle("about".localized)

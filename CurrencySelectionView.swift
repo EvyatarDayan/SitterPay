@@ -40,47 +40,45 @@ struct CurrencySelectionView: View {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea(.all)
                 
-                VStack {
-                    SearchBar(text: $searchText)
-                    
-                    List {
-                    ForEach(filteredCurrencies) { currency in
-                        HStack {
-                            Text(currency.flag)
-                                .font(.title2)
-                            
-                            Text("\(currency.code) - \(currency.name)")
-                                .font(.body)
-                                .foregroundColor(.primary)
-                            
-                            Spacer()
-                            
-                            if tempSelectedCurrency.id == currency.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(Color.appRed)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        SearchBar(text: $searchText)
+                        
+                        ForEach(filteredCurrencies) { currency in
+                            Button(action: {
+                                if currency.code != selectedCurrency.code {
+                                    pendingCurrency = currency
+                                    tempSelectedCurrency = currency
+                                    showConfirmationAlert = true
+                                } else {
+                                    dismiss()
+                                }
+                            }) {
+                                HStack {
+                                    Text(currency.flag)
+                                        .font(.title2)
+                                    
+                                    Text("\(currency.code) - \(currency.name)")
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    if tempSelectedCurrency.id == currency.id {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(Color.appRed)
+                                    }
+                                }
+                                .padding(16)
+                                .calcCardStyle()
                             }
-                        }
-                        .listRowBackground(
-                            Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            })
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            // If currency is different from current, show confirmation
-                            if currency.code != selectedCurrency.code {
-                                pendingCurrency = currency
-                                tempSelectedCurrency = currency
-                                showConfirmationAlert = true
-                            } else {
-                                // Same currency, just dismiss
-                                dismiss()
-                            }
+                            .buttonStyle(.plain)
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                 }
-                .scrollContentBackground(.hidden)
-            }
             }
             .navigationTitle("select_currency_title".localized)
             .navigationBarTitleDisplayMode(.inline)

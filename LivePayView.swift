@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import ActivityKit
 
 struct LivePayView: View {
     @ObservedObject var historyManager: HistoryManager
@@ -49,7 +48,6 @@ struct LivePayView: View {
     @State private var selectTextPulseColor: Color = Color.secondary
     @State private var selectTextPulseTimer: Timer?
     @FocusState private var focusedField: Field?
-    @State private var activity: Activity<LivePayActivityAttributes>?
     @State private var showBabysitterSelection: Bool = false
     @State private var showSelectPopup: Bool = false
     @StateObject private var babysitterManager = BabysitterManager()
@@ -70,9 +68,9 @@ struct LivePayView: View {
     }
     
     private var livePayAmount: Double {
-        guard let rate = Double(hourlyRate) else { return 0.0 }
+        guard let rate = hourlyRate.paymentAmountValue else { return 0.0 }
         let baseAmount = max(0, rate * livePayDurationHours)
-        let otherPaysAmount = Double(otherPays) ?? 0.0
+        let otherPaysAmount = otherPays.paymentAmountValue ?? 0.0
         return baseAmount + otherPaysAmount
     }
     
@@ -89,24 +87,7 @@ struct LivePayView: View {
     }
     
     private var readableDuration: String {
-        let hours = Int(livePayDurationHours)
-        let minutes = Int((livePayDurationHours - Double(hours)) * 60)
-        
-        var parts: [String] = []
-        if hours > 0 {
-            let hourText = hours == 1 ? "hour".localized : "hours".localized
-            parts.append("\(hours) \(hourText)")
-        }
-        if minutes > 0 {
-            let minuteText = minutes == 1 ? "minute".localized : "minutes".localized
-            parts.append("\(minutes) \(minuteText)")
-        }
-        
-        if parts.isEmpty {
-            return "0 \("minutes".localized)"
-        }
-        
-        return parts.joined(separator: " \("and".localized) ")
+        DurationFormat.compact(livePayDuration)
     }
     
     private var summaryText: String {
@@ -117,7 +98,7 @@ struct LivePayView: View {
         }
         
         let name = babysitterName.isEmpty ? "the_babysitter".localized : babysitterName
-        let totalPay = String(format: "%.2f", livePayAmount)
+        let totalPay = PaymentFormat.amount(livePayAmount)
         
         let dateFormatter = DateFormatter()
         dateFormatter.timeStyle = .short
@@ -137,7 +118,7 @@ struct LivePayView: View {
         }
         
         let name = babysitterName.isEmpty ? "the_babysitter".localized : babysitterName
-        let totalPay = String(format: "%.2f", livePayAmount)
+        let totalPay = PaymentFormat.amount(livePayAmount)
         
         let dateFormatter = DateFormatter()
         dateFormatter.timeStyle = .short
@@ -162,7 +143,7 @@ struct LivePayView: View {
     }
     
     private var canStartLivePay: Bool {
-        return !hourlyRate.isEmpty && !babysitterName.isEmpty && Double(hourlyRate) != nil
+        return !hourlyRate.isEmpty && !babysitterName.isEmpty && hourlyRate.paymentAmountValue != nil
     }
     
     // Babysitter statistics
@@ -196,7 +177,7 @@ struct LivePayView: View {
             if babysitterThisMonthCount > 0 {
                 return String(format: "babysitter_worked_times_this_month".localized, firstName, babysitterThisMonthCount)
             } else {
-                let formattedAmount = String(format: "%.2f", babysitterTotalEarnings)
+                let formattedAmount = PaymentFormat.amount(babysitterTotalEarnings)
                 return String(format: "babysitter_earned_till_now".localized, firstName, currencySymbol, formattedAmount)
             }
         }
@@ -208,15 +189,15 @@ struct LivePayView: View {
         // Extract first name only
         let firstName = babysitterName.components(separatedBy: " ").first ?? babysitterName
         
-        let hourlyRateValue = Double(hourlyRate) ?? 0.0
-        let otherPaysValue = Double(otherPays) ?? 0.0
+        let hourlyRateValue = hourlyRate.paymentAmountValue ?? 0.0
+        let otherPaysValue = otherPays.paymentAmountValue ?? 0.0
         
         if hourlyRateValue > 0 && otherPaysValue > 0 {
-            let formattedRate = String(format: "%.2f", hourlyRateValue)
-            let formattedExtras = String(format: "%.2f", otherPaysValue)
+            let formattedRate = PaymentFormat.amount(hourlyRateValue)
+            let formattedExtras = PaymentFormat.amount(otherPaysValue)
             return String(format: "babysitter_hourly_pay_with_extras".localized, firstName, currencySymbol, formattedRate, currencySymbol, formattedExtras)
         } else if hourlyRateValue > 0 {
-            let formattedRate = String(format: "%.2f", hourlyRateValue)
+            let formattedRate = PaymentFormat.amount(hourlyRateValue)
             return String(format: "babysitter_hourly_pay".localized, firstName, currencySymbol, formattedRate)
         }
         
@@ -389,7 +370,7 @@ struct LivePayView: View {
                             HStack(spacing: 2) {
                                 Text(currencySymbol)
                                     .font(.system(size: 24, weight: .bold))
-                                Text((isLivePayRunning || livePayStartTime != nil) ? String(format: "%.2f", livePayAmount) : "0.00")
+                                Text((isLivePayRunning || livePayStartTime != nil) ? PaymentFormat.amount(livePayAmount) : "0.00")
                                     .font(.system(size: 24, weight: .bold, design: .monospaced))
                             }
                             .foregroundColor(Color.appRed)
@@ -479,7 +460,6 @@ struct LivePayView: View {
                     startSelectTextPulseTimer()
                 }
                 
-                // Check if we should pre-fill from notification
                 checkForNotificationData()
             }
             .onDisappear {
@@ -537,10 +517,10 @@ struct LivePayView: View {
                     onSelect: { babysitter in
                         babysitterName = babysitter.name
                         if let rate = babysitter.hourlyRate {
-                            hourlyRate = String(format: "%.2f", rate)
+                            hourlyRate = PaymentFormat.amount(rate)
                         }
                         if let other = babysitter.otherPays {
-                            otherPays = String(format: "%.2f", other)
+                            otherPays = PaymentFormat.amount(other)
                         }
                         showBabysitterSelection = false
                     }
@@ -573,16 +553,11 @@ struct LivePayView: View {
     
     private func toggleLivePay() {
         if isLivePayRunning {
-            // Stop the live session
             livePayEndTime = Date()
             isLivePayRunning = false
             stopAnimationTimer()
-            endLiveActivity()
-            
-            // Automatically save to history
             saveToHistory()
         } else {
-            // Start the live pay
             livePayStartTime = Date()
             livePayEndTime = nil
             isLivePayRunning = true
@@ -590,93 +565,7 @@ struct LivePayView: View {
             previousProgress = 0.0
             isResetting = false
             startAnimationTimer()
-            startLiveActivity()
         }
-    }
-    
-    private func startLiveActivity() {
-        guard let hourlyRateValue = Double(hourlyRate) else { return }
-        let otherPaysValue = Double(otherPays) ?? 0.0
-        
-        // Check if Live Activities are available
-        guard #available(iOS 16.1, *) else {
-            print("Live Activities not available on this iOS version")
-            return
-        }
-        
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            print("Live Activities are disabled in system settings")
-            return
-        }
-        
-        let attributes = LivePayActivityAttributes(
-            startTime: livePayStartTime ?? Date(),
-            hourlyRate: hourlyRateValue,
-            otherPays: otherPaysValue
-        )
-        
-        let initialState = LivePayActivityAttributes.ContentState(
-            currentPay: 0.0,
-            duration: 0,
-            babysitterName: babysitterName.isEmpty ? "Babysitter" : babysitterName,
-            currencySymbol: currencySymbol
-        )
-        
-        do {
-            if #available(iOS 16.2, *) {
-                activity = try Activity<LivePayActivityAttributes>.request(
-                    attributes: attributes,
-                    contentState: initialState
-                )
-            } else {
-                activity = try Activity<LivePayActivityAttributes>.request(
-                    attributes: attributes,
-                    contentState: initialState,
-                    pushType: nil
-                )
-            }
-            print("✅ Live Activity started successfully")
-            print("Activity ID: \(activity?.id ?? "unknown")")
-        } catch {
-            print("❌ Failed to start Live Activity: \(error.localizedDescription)")
-            print("Error details: \(error)")
-        }
-    }
-    
-    private func updateLiveActivity() {
-        guard let activity = activity else { return }
-        
-        let updatedState = LivePayActivityAttributes.ContentState(
-            currentPay: livePayAmount,
-            duration: livePayDuration,
-            babysitterName: babysitterName.isEmpty ? "Babysitter" : babysitterName,
-            currencySymbol: currencySymbol
-        )
-        
-        if #available(iOS 16.1, *) {
-            Task {
-                await activity.update(using: updatedState)
-            }
-        }
-    }
-    
-    private func endLiveActivity() {
-        guard let activity = activity else { return }
-        
-        if #available(iOS 16.1, *) {
-            let finalState = LivePayActivityAttributes.ContentState(
-                currentPay: livePayAmount,
-                duration: livePayDuration,
-                babysitterName: babysitterName.isEmpty ? "Babysitter" : babysitterName,
-                currencySymbol: currencySymbol
-            )
-            
-            Task {
-                await activity.end(using: finalState, dismissalPolicy: .immediate)
-            }
-        }
-        
-        self.activity = nil
     }
     
     private func saveToHistory() {
@@ -689,8 +578,8 @@ struct LivePayView: View {
         }
         
         // Allow saving even if hourly rate is empty (will default to 0)
-        let hourlyRateValue = Double(hourlyRate) ?? 0.0
-        let otherPaysValue = Double(otherPays) ?? 0.0
+        let hourlyRateValue = hourlyRate.paymentAmountValue ?? 0.0
+        let otherPaysValue = otherPays.paymentAmountValue ?? 0.0
         
         // Calculate final values using the end time
         let finalDuration = end.timeIntervalSince(start)
@@ -721,15 +610,14 @@ struct LivePayView: View {
     }
     
     private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+        timer?.invalidate()
+        let newTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             if isLivePayRunning {
                 currentTime = Date()
-                // Update live activity every second (not every 0.1s)
-                if Int(currentTime.timeIntervalSince1970) % 10 == 0 {
-                    updateLiveActivity()
-                }
             }
         }
+        RunLoop.main.add(newTimer, forMode: .common)
+        timer = newTimer
     }
     
     private func stopTimer() {
@@ -870,12 +758,12 @@ struct LivePayView: View {
             }
             
             if let payPerHour = UserDefaults.standard.object(forKey: "pendingNotificationPayPerHour") as? Double {
-                hourlyRate = String(format: "%.2f", payPerHour)
+                hourlyRate = PaymentFormat.amount(payPerHour)
                 UserDefaults.standard.removeObject(forKey: "pendingNotificationPayPerHour")
             }
             
             if let otherPays = UserDefaults.standard.object(forKey: "pendingNotificationOtherPays") as? Double {
-                self.otherPays = String(format: "%.2f", otherPays)
+                self.otherPays = PaymentFormat.amount(otherPays)
                 UserDefaults.standard.removeObject(forKey: "pendingNotificationOtherPays")
             }
         }

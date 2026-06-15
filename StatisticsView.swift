@@ -144,7 +144,8 @@ struct StatisticsView: View {
                     .background(Color(.systemGroupedBackground))
                 }
                 
-                VStack(spacing: 24) {
+                ScrollView {
+                VStack(spacing: 16) {
                     if historyManager.records.isEmpty {
                         VStack(spacing: 16) {
                             Spacer()
@@ -163,7 +164,7 @@ struct StatisticsView: View {
                             HStack(spacing: 16) {
                                 StatCard(
                                     title: "total_payments".localized,
-                                    value: String(format: "\(currencySymbol)%.2f", statistics.totalPayments),
+                                    value: PaymentFormat.currency(statistics.totalPayments, symbol: currencySymbol),
                                     icon: nil,
                                     color: .green
                                 )
@@ -197,8 +198,7 @@ struct StatisticsView: View {
                         // Pie Chart Section
                         if !statistics.payByBabysitter.isEmpty {
                             VStack(alignment: .leading, spacing: 16) {
-                                Text("pay_by_babysitter".localized)
-                                    .font(.headline)
+                                CardSectionHeader(title: "pay_by_babysitter".localized)
                                 
                                 PieChartView(
                                     data: statistics.payByBabysitter,
@@ -223,7 +223,7 @@ struct StatisticsView: View {
                                                 
                                                 Spacer()
                                                 
-                                                Text(String(format: "\(currencySymbol)%.2f", amount))
+                                                Text(PaymentFormat.currency(amount, symbol: currencySymbol))
                                                     .font(.subheadline)
                                                     .fontWeight(.semibold)
                                             }
@@ -232,18 +232,14 @@ struct StatisticsView: View {
                                 }
                                 .frame(maxHeight: 200)
                             }
-                            .padding()
-                            .background(
-                                Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                })
-                            )
-                            .cornerRadius(12)
-                            .padding(.horizontal)
+                            .padding(16)
+                            .calcCardStyle()
+                            .padding(.horizontal, 16)
                         }
                     }
                 }
                 .padding(.vertical)
+                }
             }
             }
             .navigationTitle("statistics".localized)
@@ -302,13 +298,8 @@ struct StatCard: View {
                 .foregroundColor(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
+        .padding(16)
+        .calcCardStyle()
     }
 }
 
@@ -367,7 +358,7 @@ struct PieChartView: View {
                                 Text("Total")
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.secondary)
-                                Text(String(format: "\(currencySymbol)%.2f", total))
+                                Text(PaymentFormat.currency(total, symbol: currencySymbol))
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.primary)
                                     .lineLimit(1)

@@ -47,15 +47,10 @@ struct BabysittersView: View {
                                 )
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 16)
-                                .background(
-                                    Color(uiColor: UIColor { traitCollection in
-                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                    })
-                                )
-                                .cornerRadius(12)
+                                .calcCardStyle()
                                 .listRowBackground(Color(.systemGroupedBackground))
                                 .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                                .listRowInsets(EdgeInsets.cardListRow)
                             }
                             .onDelete { indexSet in
                                 for index in indexSet {
@@ -231,7 +226,7 @@ struct AddEditBabysitterView: View {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        Double(hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines)) != nil &&
+        hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).paymentAmountValue != nil &&
         isValidEmail(email.isEmpty ? "" : email)
     }
     
@@ -250,122 +245,176 @@ struct AddEditBabysitterView: View {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
                 
-                Form {
-                Section("babysitter_information".localized) {
-                    HStack {
-                        TextField("babysitter_name_placeholder".localized, text: $name)
-                            .focused($focusedField, equals: .name)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.words)
-                        
-                        Button(action: {
-                            showContactPicker = true
-                        }) {
-                            Image(systemName: "person.crop.circle.badge.plus")
-                                .foregroundColor(.appRed)
-                        }
-                    }
-                    
-                    TextField("address".localized, text: $address)
-                        .focused($focusedField, equals: .address)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.words)
-                        .onChange(of: address) { _, newValue in
-                            if !newValue.isEmpty {
-                                let hasExistingMatches = !existingAddresses.filter { $0.localizedCaseInsensitiveContains(newValue) }.isEmpty
+                ScrollView {
+                    VStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            CardSectionHeader(title: "babysitter_information".localized)
+                            
+                            HStack(spacing: 12) {
+                                TextField("babysitter_name_placeholder".localized, text: $name)
+                                    .focused($focusedField, equals: .name)
+                                    .autocorrectionDisabled()
+                                    .textInputAutocapitalization(.words)
+                                    .cardFieldBackground()
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(showValidationError && name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 1.5)
+                                    )
                                 
-                                if hasExistingMatches {
-                                    showAddressSuggestions = true
-                                } else if newValue.count >= 3 {
-                                    searchCompleter.queryFragment = newValue
-                                    showAddressSuggestions = true
-                                } else {
-                                    showAddressSuggestions = false
-                                }
-                            } else {
-                                showAddressSuggestions = false
-                                searchCompleter.queryFragment = ""
-                            }
-                        }
-                        .onChange(of: focusedField) { _, newValue in
-                            if newValue == .address && !address.isEmpty {
-                                showAddressSuggestions = true
-                            } else if newValue != .address {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    showAddressSuggestions = false
+                                Button(action: { showContactPicker = true }) {
+                                    Image(systemName: "person.crop.circle.badge.plus")
+                                        .foregroundColor(.appRed)
+                                        .padding(12)
+                                        .background(Color.appRed.opacity(0.12))
+                                        .cornerRadius(10)
                                 }
                             }
-                        }
-                    
-                    if showAddressSuggestions && !allAddressSuggestions.isEmpty {
-                        ForEach(Array(allAddressSuggestions.prefix(5).enumerated()), id: \.element.id) { _, suggestion in
-                            Button(action: {
-                                let fullAddress = suggestion.subtitle.isEmpty ? suggestion.title : "\(suggestion.title), \(suggestion.subtitle)"
-                                address = fullAddress
-                                showAddressSuggestions = false
-                                focusedField = nil
-                            }) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(suggestion.title)
-                                        .foregroundColor(.primary)
-                                    if !suggestion.subtitle.isEmpty {
-                                        Text(suggestion.subtitle)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                            
+                            TextField("address".localized, text: $address)
+                                .focused($focusedField, equals: .address)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.words)
+                                .cardFieldBackground()
+                                .onChange(of: address) { _, newValue in
+                                    if !newValue.isEmpty {
+                                        let hasExistingMatches = !existingAddresses.filter { $0.localizedCaseInsensitiveContains(newValue) }.isEmpty
+                                        if hasExistingMatches {
+                                            showAddressSuggestions = true
+                                        } else if newValue.count >= 3 {
+                                            searchCompleter.queryFragment = newValue
+                                            showAddressSuggestions = true
+                                        } else {
+                                            showAddressSuggestions = false
+                                        }
+                                    } else {
+                                        showAddressSuggestions = false
+                                        searchCompleter.queryFragment = ""
                                     }
                                 }
+                                .onChange(of: focusedField) { _, newValue in
+                                    if newValue == .address && !address.isEmpty {
+                                        showAddressSuggestions = true
+                                    } else if newValue != .address {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                            showAddressSuggestions = false
+                                        }
+                                    }
+                                }
+                            
+                            if showAddressSuggestions && !allAddressSuggestions.isEmpty {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(allAddressSuggestions.prefix(5).enumerated()), id: \.element.id) { index, suggestion in
+                                        Button(action: {
+                                            let fullAddress = suggestion.subtitle.isEmpty ? suggestion.title : "\(suggestion.title), \(suggestion.subtitle)"
+                                            address = fullAddress
+                                            showAddressSuggestions = false
+                                            focusedField = nil
+                                        }) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(suggestion.title)
+                                                    .foregroundColor(.primary)
+                                                if !suggestion.subtitle.isEmpty {
+                                                    Text(suggestion.subtitle)
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.vertical, 10)
+                                            .padding(.horizontal, 12)
+                                        }
+                                        .buttonStyle(.plain)
+                                        
+                                        if index < min(4, allAddressSuggestions.prefix(5).count - 1) {
+                                            Divider()
+                                        }
+                                    }
+                                }
+                                .background(Color(.systemGray6))
+                                .cornerRadius(10)
                             }
                         }
+                        .padding(16)
+                        .calcCardStyle()
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            CardSectionHeader(title: "contact_information".localized)
+                            
+                            TextField("phone_number".localized, text: $phoneNumber)
+                                .keyboardType(.phonePad)
+                                .focused($focusedField, equals: .phoneNumber)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .cardFieldBackground()
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(showValidationError && phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 1.5)
+                                )
+                                .onChange(of: phoneNumber) { _, newValue in
+                                    let filtered = newValue.filter { "0123456789 -()".contains($0) }
+                                    if filtered != newValue { phoneNumber = filtered }
+                                }
+                            
+                            TextField("email".localized, text: $email)
+                                .keyboardType(.emailAddress)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .focused($focusedField, equals: .email)
+                                .cardFieldBackground()
+                        }
+                        .padding(16)
+                        .calcCardStyle()
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            CardSectionHeader(title: "payment_information".localized)
+                            
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("hourly_rate".localized)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    TextField("0.00", text: $hourlyRate)
+                                        .keyboardType(.decimalPad)
+                                        .focused($focusedField, equals: .hourlyRate)
+                                        .autocorrectionDisabled()
+                                        .textInputAutocapitalization(.never)
+                                        .cardFieldBackground()
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .stroke(showValidationError && (hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).paymentAmountValue == nil) ? Color.red : Color.clear, lineWidth: 1.5)
+                                        )
+                                        .onChange(of: hourlyRate) { _, newValue in
+                                            let filtered = newValue.filteringPaymentInput()
+                                            if filtered != newValue { hourlyRate = filtered }
+                                        }
+                                }
+                                .frame(maxWidth: .infinity)
+                                
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("other_pays".localized)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    TextField("0.00", text: $otherPays)
+                                        .keyboardType(.decimalPad)
+                                        .focused($focusedField, equals: .otherPays)
+                                        .autocorrectionDisabled()
+                                        .textInputAutocapitalization(.never)
+                                        .cardFieldBackground()
+                                        .onChange(of: otherPays) { _, newValue in
+                                            let filtered = newValue.filteringPaymentInput()
+                                            if filtered != newValue { otherPays = filtered }
+                                        }
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .padding(16)
+                        .calcCardStyle()
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 100)
                 }
-                
-                Section("contact_information".localized) {
-                    TextField("phone_number".localized, text: $phoneNumber)
-                        .keyboardType(.phonePad)
-                        .focused($focusedField, equals: .phoneNumber)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .onChange(of: phoneNumber) { _, newValue in
-                            let filtered = newValue.filter { "0123456789 -()".contains($0) }
-                            if filtered != newValue {
-                                phoneNumber = filtered
-                            }
-                        }
-                    
-                    TextField("email".localized, text: $email)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .focused($focusedField, equals: .email)
-                }
-                
-                Section("payment_information".localized) {
-                    TextField("hourly_rate".localized, text: $hourlyRate)
-                        .keyboardType(.decimalPad)
-                        .focused($focusedField, equals: .hourlyRate)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .onChange(of: hourlyRate) { _, newValue in
-                            let filtered = newValue.filter { "0123456789.".contains($0) }
-                            if filtered != newValue {
-                                hourlyRate = filtered
-                            }
-                        }
-                    
-                    TextField("other_pays".localized, text: $otherPays)
-                        .keyboardType(.decimalPad)
-                        .focused($focusedField, equals: .otherPays)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .onChange(of: otherPays) { _, newValue in
-                            let filtered = newValue.filter { "0123456789.".contains($0) }
-                            if filtered != newValue {
-                                otherPays = filtered
-                            }
-                        }
-                }
-                }
-                .scrollContentBackground(.hidden)
             }
             .navigationTitle(isEditMode ? "edit_babysitter".localized : "add_babysitter".localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -377,14 +426,26 @@ struct AddEditBabysitterView: View {
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("save".localized) {
-                        saveBabysitter()
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                              phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                              hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("done".localized) { focusedField = nil }
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button(action: saveBabysitter) {
+                    Text("save".localized)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(isFormValid ? Color.appRed : Color.gray)
+                        .clipShape(Capsule())
+                }
+                .disabled(!isFormValid)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                .background(Color(.systemGroupedBackground))
             }
             .sheet(isPresented: $showContactPicker) {
                 ContactPickerView(
@@ -409,8 +470,8 @@ struct AddEditBabysitterView: View {
                     address = babysitter.address
                     phoneNumber = babysitter.phoneNumber
                     email = babysitter.email
-                    hourlyRate = babysitter.hourlyRate != nil ? String(format: "%.2f", babysitter.hourlyRate!) : ""
-                    otherPays = babysitter.otherPays != nil ? String(format: "%.2f", babysitter.otherPays!) : ""
+                    hourlyRate = babysitter.hourlyRate != nil ? PaymentFormat.amount(babysitter.hourlyRate!) : ""
+                    otherPays = babysitter.otherPays != nil ? PaymentFormat.amount(babysitter.otherPays!) : ""
                     showAddressSuggestions = false
                 }
             }
@@ -437,7 +498,7 @@ struct AddEditBabysitterView: View {
             hasErrors = true
         }
         
-        if trimmedHourlyRate.isEmpty || Double(trimmedHourlyRate) == nil {
+        if trimmedHourlyRate.isEmpty || trimmedHourlyRate.paymentAmountValue == nil {
             hasErrors = true
         }
         
@@ -451,8 +512,8 @@ struct AddEditBabysitterView: View {
         }
         
         // All validations passed, save
-        let hourlyRateValue = Double(trimmedHourlyRate)!
-        let otherPaysValue = Double(otherPays.trimmingCharacters(in: .whitespacesAndNewlines))
+        let hourlyRateValue = trimmedHourlyRate.paymentAmountValue!
+        let otherPaysValue = otherPays.trimmingCharacters(in: .whitespacesAndNewlines).paymentAmountValue
         
         if let existingBabysitter = babysitter {
             // Update existing

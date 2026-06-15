@@ -56,102 +56,95 @@ struct ProfileView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                // Header Section with Profile Image
-                Section {
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                ScrollView {
                     VStack(spacing: 16) {
-                        ProfileImageSelector(selectedImage: $profileImage, selectedAvatar: $selectedAvatar, onImageChange: {
-                            isSaved = false
-                        })
-                    }
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity)
-                }
-                
-                // Personal Information Section
-                Section {
-                    // First Name and Last Name - Side by Side
-                    HStack(spacing: 0) {
-                        TextField("first_name".localized, text: $firstName)
-                        .onChange(of: firstName) { oldValue, newValue in
-                            isSaved = false
-                        }
-                        
-                        Rectangle()
-                            .fill(Color(.systemGray4))
-                            .frame(width: 1, height: 20)
-                        
-                        TextField("last_name".localized, text: $lastName)
-                            .padding(.leading, 8)
-                            .onChange(of: lastName) { oldValue, newValue in
+                        VStack(spacing: 16) {
+                            ProfileImageSelector(selectedImage: $profileImage, selectedAvatar: $selectedAvatar, onImageChange: {
                                 isSaved = false
-                            }
-                    }
-                    
-                    // Email Field
-                    HStack {
-                        Text(email)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                    }
-                } header: {
-                    Text("personal_information".localized)
-                } footer: {
-                    Text("email_cannot_be_updated".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Security Section
-                Section("security".localized) {
-                    Button(action: {
-                        showingPasswordUpdate = true
-                    }) {
-                        HStack(spacing: 12) {
-                            // Icon
-                            Image(systemName: "lock.fill")
-                                .font(.title2)
-                                .foregroundColor(.blue)
-                                .frame(width: 30)
+                            })
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity)
+                        .calcCardStyle()
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            CardSectionHeader(title: "personal_information".localized)
                             
-                            // Title and Subtitle
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("update_password".localized)
-                                    .font(.body)
-                                    .foregroundColor(.primary)
+                            HStack(spacing: 12) {
+                                TextField("first_name".localized, text: $firstName)
+                                    .onChange(of: firstName) { _, _ in isSaved = false }
+                                    .cardFieldBackground()
                                 
-                                Text("change_your_account_password".localized)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
+                                TextField("last_name".localized, text: $lastName)
+                                    .onChange(of: lastName) { _, _ in isSaved = false }
+                                    .cardFieldBackground()
                             }
                             
-                            Spacer()
+                            Text(email)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .cardFieldBackground()
                             
-                            Image(systemName: "chevron.right")
+                            Text("email_cannot_be_updated".localized)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
+                        .padding(16)
+                        .calcCardStyle()
+                        
+                        VStack(spacing: 0) {
+                            Button(action: { showingPasswordUpdate = true }) {
+                                HStack(spacing: 12) {
+                                    Circle()
+                                        .fill(Color.blue.opacity(0.2))
+                                        .frame(width: 32, height: 32)
+                                        .overlay(
+                                            Image(systemName: "lock.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 14))
+                                        )
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("update_password".localized)
+                                            .font(.body)
+                                            .foregroundColor(.primary)
+                                        Text("change_your_account_password".localized)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(16)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .calcCardStyle()
+                        
+                        Button(action: { showingDeleteAccountAlert = true }) {
+                            Text("delete_account".localized)
+                                .font(.body)
+                                .foregroundColor(.red)
+                                .frame(maxWidth: .infinity)
+                                .padding(16)
+                        }
+                        .calcCardStyle()
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal, 16)
+                    .padding(.vertical)
                 }
-                
-                // Delete Account Section
-                Section {
-                    Button(action: {
-                        showingDeleteAccountAlert = true
-                    }) {
-                        Text("delete_account".localized)
-                            .foregroundColor(.red)
-                    }
-                }
-                .listRowBackground(Color.clear)
             }
-            .listStyle(.insetGrouped)
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("edit_profile".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(buttonTitle) {
@@ -476,136 +469,94 @@ struct UpdatePasswordView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("update_password".localized)
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                        
-                        Text("enter_your_current_password_and_choose_new_one".localized)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .listRowBackground(Color.clear)
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
                 
-                Section("password_information".localized) {
-                    // Current Password
-                    HStack {
-                        Image(systemName: "lock")
-                            .foregroundColor(.blue)
-                            .frame(width: 20)
-                        
-                        if isCurrentPasswordVisible {
-                            TextField("current_password".localized, text: $currentPassword)
-                        } else {
-                            SecureField("current_password".localized, text: $currentPassword)
-                        }
-                        
-                        Button(action: {
-                            isCurrentPasswordVisible.toggle()
-                        }) {
-                            Image(systemName: isCurrentPasswordVisible ? "eye.slash" : "eye")
+                ScrollView {
+                    VStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("update_password".localized)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                            Text("enter_your_current_password_and_choose_new_one".localized)
+                                .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
-                    }
-                    
-                    // New Password
-                    HStack {
-                        Image(systemName: "lock.fill")
-                            .foregroundColor(.green)
-                            .frame(width: 20)
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .calcCardStyle()
                         
-                        if isNewPasswordVisible {
-                            TextField("new_password".localized, text: $newPassword)
-                        } else {
-                            SecureField("new_password".localized, text: $newPassword)
+                        VStack(alignment: .leading, spacing: 10) {
+                            CardSectionHeader(title: "password_information".localized)
+                            
+                            passwordField(
+                                text: $currentPassword,
+                                placeholder: "current_password".localized,
+                                isVisible: $isCurrentPasswordVisible
+                            )
+                            
+                            passwordField(
+                                text: $newPassword,
+                                placeholder: "new_password".localized,
+                                isVisible: $isNewPasswordVisible
+                            )
+                            
+                            passwordField(
+                                text: $confirmPassword,
+                                placeholder: "reenter_new_password".localized,
+                                isVisible: $isConfirmPasswordVisible
+                            )
                         }
+                        .padding(16)
+                        .calcCardStyle()
                         
-                        Button(action: {
-                            isNewPasswordVisible.toggle()
-                        }) {
-                            Image(systemName: isNewPasswordVisible ? "eye.slash" : "eye")
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("password_requirements".localized)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.secondary)
+                            Text("at_least_6_characters_long".localized)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("new_password_must_be_different_from_current".localized)
+                                .font(.caption)
                                 .foregroundColor(.secondary)
                         }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .calcCardStyle()
                     }
-                    
-                    // Confirm Password
-                    HStack {
-                        Image(systemName: "lock.fill")
-                            .foregroundColor(.orange)
-                            .frame(width: 20)
-                        
-                        if isConfirmPasswordVisible {
-                            TextField("reenter_new_password".localized, text: $confirmPassword)
-                        } else {
-                            SecureField("reenter_new_password".localized, text: $confirmPassword)
-                        }
-                        
-                        Button(action: {
-                            isConfirmPasswordVisible.toggle()
-                        }) {
-                            Image(systemName: isConfirmPasswordVisible ? "eye.slash" : "eye")
-                                .foregroundColor(.secondary)
-                        }
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 100)
                 }
-                
-                // Password Requirements
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("password_requirements".localized)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                        
-                        Text("at_least_6_characters_long".localized)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        Text("new_password_must_be_different_from_current".localized)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-                .listRowBackground(Color.clear)
-                
-                // Update Button
-                Section {
-                    Button(action: {
-                        updatePassword()
-                    }) {
-                        Text("update_password".localized)
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(isFormValid ? Color.blue : Color.gray)
-                            .cornerRadius(12)
-                    }
-                    .disabled(!isFormValid)
-                }
-                .listRowBackground(Color.clear)
             }
-            .navigationTitle("")
+            .navigationTitle("update_password".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("cancel".localized) {
                         dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("update".localized) {
-                        updatePassword()
-                    }
-                    .disabled(!isFormValid)
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button(action: updatePassword) {
+                    Text("update_password".localized)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(isFormValid ? Color.appRed : Color.gray)
+                        .clipShape(Capsule())
                 }
+                .disabled(!isFormValid)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                .background(Color(.systemGroupedBackground))
             }
             .alert("password_update".localized, isPresented: $showingAlert) {
                 Button("ok".localized) { }
@@ -613,6 +564,26 @@ struct UpdatePasswordView: View {
                 Text(alertMessage)
             }
         }
+    }
+    
+    private func passwordField(text: Binding<String>, placeholder: String, isVisible: Binding<Bool>) -> some View {
+        HStack {
+            Group {
+                if isVisible.wrappedValue {
+                    TextField(placeholder, text: text)
+                } else {
+                    SecureField(placeholder, text: text)
+                }
+            }
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.never)
+            
+            Button(action: { isVisible.wrappedValue.toggle() }) {
+                Image(systemName: isVisible.wrappedValue ? "eye.slash" : "eye")
+                    .foregroundColor(.secondary)
+            }
+        }
+        .cardFieldBackground()
     }
     
     private var isFormValid: Bool {

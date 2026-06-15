@@ -50,85 +50,108 @@ struct HelpSupportView: View {
                 
                 Group {
                 if showForm {
-                    Form {
-                        Section(header: Text("your_full_name".localized)) {
-                            TextField("full_name".localized, text: $fullName)
-                        }
-                        
-                        Section(header: Text("your_email".localized)) {
-                            TextField("email".localized, text: $email)
-                                .keyboardType(.emailAddress)
-                                .autocapitalization(.none)
-                        }
-                        
-                        Section(header: Text("subject".localized)) {
-                            TextField("", text: $subject)
-                                .onChange(of: subject) { oldValue, newValue in
-                                    if newValue.count > 100 {
-                                        subject = String(newValue.prefix(100))
-                                    }
-                                }
-                            HStack {
-                                Spacer()
-                                Text("\(subject.count)/100")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                CardSectionHeader(title: "your_full_name".localized)
+                                TextField("full_name".localized, text: $fullName)
+                                    .cardFieldBackground()
                             }
-                        }
-                        
-                        Section(header: Text("description".localized)) {
-                            TextEditor(text: $description)
-                                .frame(height: 120)
-                                .onChange(of: description) { oldValue, newValue in
-                                    if newValue.count > 400 {
-                                        description = String(newValue.prefix(400))
-                                    }
-                                }
-                            HStack {
-                                Spacer()
-                                Text("\(description.count)/400")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                            .padding(16)
+                            .calcCardStyle()
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                CardSectionHeader(title: "your_email".localized)
+                                TextField("email".localized, text: $email)
+                                    .keyboardType(.emailAddress)
+                                    .autocapitalization(.none)
+                                    .cardFieldBackground()
                             }
-                        }
-                        
-                        if showError && !allFieldsFilled {
-                            Section {
+                            .padding(16)
+                            .calcCardStyle()
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                CardSectionHeader(title: "subject".localized)
+                                TextField("", text: $subject)
+                                    .cardFieldBackground()
+                                    .onChange(of: subject) { _, newValue in
+                                        if newValue.count > 100 {
+                                            subject = String(newValue.prefix(100))
+                                        }
+                                    }
+                                HStack {
+                                    Spacer()
+                                    Text("\(subject.count)/100")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(16)
+                            .calcCardStyle()
+                            
+                            VStack(alignment: .leading, spacing: 10) {
+                                CardSectionHeader(title: "description".localized)
+                                TextEditor(text: $description)
+                                    .frame(height: 120)
+                                    .padding(8)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(10)
+                                    .onChange(of: description) { _, newValue in
+                                        if newValue.count > 400 {
+                                            description = String(newValue.prefix(400))
+                                        }
+                                    }
+                                HStack {
+                                    Spacer()
+                                    Text("\(description.count)/400")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(16)
+                            .calcCardStyle()
+                            
+                            if showError && !allFieldsFilled {
                                 Text("all_fields_required".localized)
                                     .foregroundColor(.red)
                                     .font(.subheadline)
+                                    .padding(16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .calcCardStyle()
                             }
                         }
-                        
-                        Section {
-                            Button(action: {
-                                if allFieldsFilled {
-                                    alertType = .messageSent
-                                    showError = false
-                                } else {
-                                    showError = true
-                                }
-                            }) {
-                                Text("send".localized)
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 50)
-                                    .background(allFieldsFilled ? Color.green : Color.gray)
-                                    .cornerRadius(12)
-                            }
-                            .disabled(!allFieldsFilled)
-                        }
-                        .listRowBackground(Color.clear)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                        .padding(.bottom, 100)
                     }
                     .navigationTitle("contact_us".localized)
-                    .onAppear {
-                        populateUserInfo()
+                    .onAppear { populateUserInfo() }
+                    .safeAreaInset(edge: .bottom) {
+                        Button(action: {
+                            if allFieldsFilled {
+                                alertType = .messageSent
+                                showError = false
+                            } else {
+                                showError = true
+                            }
+                        }) {
+                            Text("send".localized)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(allFieldsFilled ? Color.appGreen : Color.gray)
+                                .clipShape(Capsule())
+                        }
+                        .disabled(!allFieldsFilled)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                        .background(Color(.systemGroupedBackground))
                     }
                 } else {
-                    VStack {
-                        Spacer(minLength: 0)
-                        VStack(alignment: .center, spacing: 32) {
+                    ScrollView {
+                        VStack(spacing: 16) {
                             VStack(alignment: .center, spacing: 16) {
                                 Text("wed_love_to_hear_from_you".localized)
                                     .font(.title3)
@@ -142,12 +165,13 @@ struct HelpSupportView: View {
                                 
                                 Text("feel_free_to_reach_out".localized)
                                     .font(.body)
-                                
-                                Divider()
-                                    .padding(.vertical, 8)
-                                    .padding(.top, 32)
-                                    .padding(.bottom, 32)
-                                
+                            }
+                            .multilineTextAlignment(.center)
+                            .padding(16)
+                            .frame(maxWidth: .infinity)
+                            .calcCardStyle()
+                            
+                            VStack(spacing: 12) {
                                 if let emailURL = URL(string: "mailto:\(supportEmailAddress)") {
                                     Link(destination: emailURL) {
                                         Text("email_contact".localized)
@@ -165,45 +189,41 @@ struct HelpSupportView: View {
                                             .underline()
                                     }
                                 }
-                                
-                                Divider()
-                                    .padding(.vertical, 8)
-                                    .padding(.top, 32)
                             }
-                            .multilineTextAlignment(.center)
+                            .padding(16)
                             .frame(maxWidth: .infinity)
-                            .padding(.horizontal, 32)
-                            
-                            Text("or".localized)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.secondary)
-                                .padding(.vertical, 8)
-                            
-                            Button(action: {
-                                populateUserInfo()
-                                showForm = true
-                            }) {
-                                Text("contact_form".localized)
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 50)
-                                    .background(Color.green)
-                                    .cornerRadius(12)
-                                    .padding(.horizontal, 32)
-                            }
+                            .calcCardStyle()
                             
                             Text("we_aim_to_respond_within_24_hours".localized)
                                 .font(.body)
                                 .fontWeight(.bold)
                                 .multilineTextAlignment(.center)
+                                .padding(16)
+                                .frame(maxWidth: .infinity)
+                                .calcCardStyle()
                         }
-                        Spacer()
+                        .padding(.horizontal, 16)
+                        .padding(.vertical)
                     }
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(.vertical, 32)
                     .navigationTitle("help_support".localized)
+                    .safeAreaInset(edge: .bottom) {
+                        Button(action: {
+                            populateUserInfo()
+                            showForm = true
+                        }) {
+                            Text("contact_form".localized)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(Color.appGreen)
+                                .clipShape(Capsule())
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                        .background(Color(.systemGroupedBackground))
+                    }
                 }
             }
             }

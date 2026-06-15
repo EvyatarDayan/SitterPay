@@ -46,12 +46,14 @@ struct SettingsView: View {
                     .ignoresSafeArea(.all)
                 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                     // MY BABYSITTERS Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("my_babysitters".localized)
                             .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(.secondary)
+                            .textCase(.uppercase)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 8)
                         
@@ -95,19 +97,16 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .background(
-                            Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            })
-                        )
-                        .cornerRadius(12)
+                        .calcCardStyle()
                     }
                     
                     // STATISTICS Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("statistics".localized)
                             .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(.secondary)
+                            .textCase(.uppercase)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 8)
                         
@@ -151,19 +150,16 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .background(
-                            Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            })
-                        )
-                        .cornerRadius(12)
+                        .calcCardStyle()
                     }
                     
                     // CLEAR HISTORY Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("data_management".localized)
                             .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(.secondary)
+                            .textCase(.uppercase)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 8)
                         
@@ -207,19 +203,16 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .background(
-                            Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            })
-                        )
-                        .cornerRadius(12)
+                        .calcCardStyle()
                     }
                     
                     // PREFERENCES Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("preferences".localized)
                             .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(.secondary)
+                            .textCase(.uppercase)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 8)
                         
@@ -353,19 +346,16 @@ struct SettingsView: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                         }
-                                .background(
-                                    Color(uiColor: UIColor { traitCollection in
-                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                    })
-                                )
-                        .cornerRadius(12)
+                                .calcCardStyle()
                     }
                     
                     // SUPPORT Section
                     VStack(alignment: .leading, spacing: 0) {
                         Text("support".localized)
                             .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundColor(.secondary)
+                            .textCase(.uppercase)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 8)
                         
@@ -494,12 +484,7 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                                .background(
-                                    Color(uiColor: UIColor { traitCollection in
-                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                    })
-                                )
-                        .cornerRadius(12)
+                                .calcCardStyle()
                     }
                 }
                     .padding(.horizontal)
@@ -574,34 +559,49 @@ struct LanguageSelectionView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                ForEach(languages, id: \.1) { flag, language in
-                    HStack {
-                        Text(flag)
-                        Text(language)
-                            .foregroundColor(.primary)
-                        Spacer()
-                        if language == selectedLanguage {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(Color.appRed)
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 16) {
+                        VStack(spacing: 0) {
+                            ForEach(Array(languages.enumerated()), id: \.element.1) { index, item in
+                                let (flag, language) = item
+                                Button(action: {
+                                    selectedLanguage = language
+                                    LocalizationManager.shared.setLanguage(language)
+                                    dismiss()
+                                }) {
+                                    HStack {
+                                        Text(flag)
+                                        Text(language)
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        if language == selectedLanguage {
+                                            Image(systemName: "checkmark")
+                                                .foregroundColor(Color.appRed)
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 14)
+                                }
+                                .buttonStyle(.plain)
+                                
+                                if index < languages.count - 1 {
+                                    Divider().padding(.leading, 16)
+                                }
+                            }
                         }
+                        .calcCardStyle()
                     }
-                    .listRowBackground(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .onTapGesture {
-                        selectedLanguage = language
-                        LocalizationManager.shared.setLanguage(language)
-                        dismiss()
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("select_language".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("cancel".localized) {

@@ -36,28 +36,6 @@ struct HistoryView: View {
         return formatter
     }
     
-    // Format duration from TimeInterval to readable format
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration / 3600)
-        let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
-        
-        var parts: [String] = []
-        if hours > 0 {
-            let hourText = hours == 1 ? "hour".localized : "hours".localized
-            parts.append("\(hours) \(hourText)")
-        }
-        if minutes > 0 {
-            let minuteText = minutes == 1 ? "minute".localized : "minutes".localized
-            parts.append("\(minutes) \(minuteText)")
-        }
-        
-        if parts.isEmpty {
-            return "0 \("minutes".localized)"
-        }
-        
-        return parts.joined(separator: " \("and".localized) ")
-    }
-    
     // Get unique babysitter names from records
     private var uniqueBabysitters: [String] {
         Array(Set(historyManager.records.map { $0.babysitterName })).sorted()
@@ -198,7 +176,7 @@ struct HistoryView: View {
                 Text(record.babysitterName)
                     .font(.headline)
                 
-                Text("\(dateFormatter.string(from: record.date)) • \(formatDuration(record.duration))")
+                Text("\(dateFormatter.string(from: record.date)) • \(DurationFormat.compact(record.duration))")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
@@ -206,7 +184,7 @@ struct HistoryView: View {
             Spacer()
             
             VStack(alignment: .trailing, spacing: 4) {
-                                    Text(String(format: "\(currencySymbol(for: record.currencyCode))%.2f", record.totalPay))
+                                    Text(PaymentFormat.currency(record.totalPay, symbol: currencySymbol(for: record.currencyCode)))
                                         .font(.headline)
                                         .foregroundColor(Color.appRed)
                 
@@ -222,15 +200,10 @@ struct HistoryView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
+        .calcCardStyle()
         .listRowBackground(Color(.systemGroupedBackground))
         .listRowSeparator(.hidden)
-        .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+        .listRowInsets(EdgeInsets.cardListRow)
         .contentShape(Rectangle())
         .onTapGesture {
             selectedRecord = record
@@ -353,8 +326,8 @@ struct HistoryView: View {
             for record in sortedRecords {
                 // Prepare row data
                 let dateText = dateFormatter.string(from: record.date)
-                let durationText = formatDuration(record.duration)
-                let totalPayText = "\(currencySymbol(for: record.currencyCode))\(String(format: "%.2f", record.totalPay))"
+                let durationText = DurationFormat.compact(record.duration)
+                let totalPayText = PaymentFormat.currency(record.totalPay, symbol: currencySymbol(for: record.currencyCode))
                 let statusText = record.isPaid ? "paid".localized : "pending".localized
                 
                 let rowData = [record.babysitterName, dateText, durationText, totalPayText, statusText]

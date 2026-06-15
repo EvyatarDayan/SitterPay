@@ -72,15 +72,10 @@ struct TemporaryView: View {
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 16)
-                                    .background(
-                                        Color(uiColor: UIColor { traitCollection in
-                                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                        })
-                                    )
-                                    .cornerRadius(12)
+                                    .calcCardStyle()
                                     .listRowBackground(Color(.systemGroupedBackground))
                                     .listRowSeparator(.hidden)
-                                    .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                                    .listRowInsets(EdgeInsets.cardListRow)
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         selectedEvent = event
@@ -229,12 +224,7 @@ struct CalendarView: View {
             }
             .padding(.horizontal, 16)
         }
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
+        .calcCardStyle()
     }
 }
 
@@ -288,7 +278,7 @@ struct CalendarDayView: View {
             }
             .frame(width: 44, height: 44)
             .background(isSelected ? (hasConfirmedEvents ? Color.appGreen : Color.appRed) : Color.clear)
-            .cornerRadius(8)
+            .cornerRadius(10)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -343,7 +333,7 @@ struct AddEventView: View {
         !eventName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !babysitterName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !payPerHour.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        Double(payPerHour) != nil
+        payPerHour.paymentAmountValue != nil
     }
     
     var body: some View {
@@ -353,9 +343,7 @@ struct AddEventView: View {
                     // Event Information Card
                     VStack(spacing: 0) {
                         HStack {
-                            Text("event_information".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
+                            CardSectionHeader(title: "event_information".localized)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -378,9 +366,9 @@ struct AddEventView: View {
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 8)
                                     .background(Color(.systemGray6))
-                                    .cornerRadius(8)
+                                    .cornerRadius(10)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
+                                        RoundedRectangle(cornerRadius: 10)
                                             .stroke(showValidationError && eventName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 2)
                                     )
                                     .onChange(of: eventName) { oldValue, newValue in
@@ -453,21 +441,14 @@ struct AddEventView: View {
                             .padding(.vertical, 12)
                         }
                     }
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
+                    .calcCardStyle()
                     .padding(.horizontal)
                     .padding(.top)
                     
                     // Babysitter Information Card
                     VStack(spacing: 0) {
                         HStack {
-                            Text("babysitter_information".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
+                            CardSectionHeader(title: "babysitter_information".localized)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -491,9 +472,9 @@ struct AddEventView: View {
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 8)
                                         .background(Color(.systemGray6))
-                                        .cornerRadius(8)
+                                        .cornerRadius(10)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
+                                            RoundedRectangle(cornerRadius: 10)
                                                 .stroke(showValidationError && babysitterName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 2)
                                         )
                                         .onChange(of: babysitterName) { oldValue, newValue in
@@ -513,7 +494,7 @@ struct AddEventView: View {
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 8)
                                             .background(Color.appRed.opacity(0.1))
-                                            .cornerRadius(8)
+                                            .cornerRadius(10)
                                     }
                                 }
                             }
@@ -541,17 +522,17 @@ struct AddEventView: View {
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 8)
                                             .background(Color(.systemGray6))
-                                            .cornerRadius(8)
+                                            .cornerRadius(10)
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(showValidationError && (payPerHour.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || Double(payPerHour.trimmingCharacters(in: .whitespacesAndNewlines)) == nil) ? Color.red : Color.clear, lineWidth: 2)
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(showValidationError && (payPerHour.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || payPerHour.trimmingCharacters(in: .whitespacesAndNewlines).paymentAmountValue == nil) ? Color.red : Color.clear, lineWidth: 2)
                                             )
                                             .onChange(of: payPerHour) { oldValue, newValue in
-                                                let filtered = newValue.filter { "0123456789.".contains($0) }
+                                                let filtered = newValue.filteringPaymentInput()
                                                 if filtered != newValue {
                                                     payPerHour = filtered
                                                 }
-                                                if showValidationError && !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && Double(newValue.trimmingCharacters(in: .whitespacesAndNewlines)) != nil {
+                                                if showValidationError && !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && newValue.trimmingCharacters(in: .whitespacesAndNewlines).paymentAmountValue != nil {
                                                     showValidationError = false
                                                 }
                                             }
@@ -582,9 +563,9 @@ struct AddEventView: View {
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 8)
                                             .background(Color(.systemGray6))
-                                            .cornerRadius(8)
+                                            .cornerRadius(10)
                                             .onChange(of: otherPays) { oldValue, newValue in
-                                                let filtered = newValue.filter { "0123456789.".contains($0) }
+                                                let filtered = newValue.filteringPaymentInput()
                                                 if filtered != newValue {
                                                     otherPays = filtered
                                                 }
@@ -626,20 +607,13 @@ struct AddEventView: View {
                             .padding(.vertical, 12)
                         }
                     }
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
+                    .calcCardStyle()
                     .padding(.horizontal)
                     
                     // Comments Card
                     VStack(spacing: 0) {
                         HStack {
-                            Text("comments".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
+                            CardSectionHeader(title: "comments".localized)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -652,7 +626,7 @@ struct AddEventView: View {
                                 .frame(minHeight: 100)
                                 .padding(8)
                                 .background(Color(.systemGray6))
-                                .cornerRadius(8)
+                                .cornerRadius(10)
                                 .focused($focusedField, equals: .comments)
                                 .overlay(
                                     Group {
@@ -674,12 +648,7 @@ struct AddEventView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                     }
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
+                    .calcCardStyle()
                     .padding(.horizontal)
                     .padding(.bottom)
                 }
@@ -720,10 +689,10 @@ struct AddEventView: View {
                         DispatchQueue.main.async {
                             babysitterName = babysitter.name
                             if let rate = babysitter.hourlyRate {
-                                payPerHour = String(format: "%.2f", rate)
+                                payPerHour = PaymentFormat.amount(rate)
                             }
                             if let other = babysitter.otherPays {
-                                otherPays = String(format: "%.2f", other)
+                                otherPays = PaymentFormat.amount(other)
                             }
                             showBabysitterSelection = false
                         }
@@ -746,7 +715,7 @@ struct AddEventView: View {
         let trimmedName = babysitterName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedRate = payPerHour.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        if trimmedEventName.isEmpty || trimmedName.isEmpty || trimmedRate.isEmpty || Double(trimmedRate) == nil {
+        if trimmedEventName.isEmpty || trimmedName.isEmpty || trimmedRate.isEmpty || trimmedRate.paymentAmountValue == nil {
             showValidationError = true
             return
         }
@@ -764,8 +733,8 @@ struct AddEventView: View {
             date: eventDate,
             startTime: combinedDateTime,
             babysitterName: trimmedName,
-            payPerHour: Double(trimmedRate) ?? 0.0,
-            otherPays: Double(otherPays) ?? 0.0,
+            payPerHour: trimmedRate.paymentAmountValue ?? 0.0,
+            otherPays: otherPays.paymentAmountValue ?? 0.0,
             comments: comments.trimmingCharacters(in: .whitespacesAndNewlines),
             isConfirmed: isConfirmed,
             confirmedByName: isConfirmed ? trimmedName : nil
@@ -834,8 +803,8 @@ struct AddEventView: View {
                 ("Date", dateFormatter.string(from: eventDate)),
                 ("Start Time", timeFormatter.string(from: startTime)),
                 ("Babysitter Name", babysitterName),
-                ("Pay per Hour", "\(currencySymbol)\(String(format: "%.2f", Double(payPerHour) ?? 0.0))"),
-                ("Other Pays", "\(currencySymbol)\(String(format: "%.2f", Double(otherPays) ?? 0.0))"),
+                ("Pay per Hour", PaymentFormat.currency(payPerHour.paymentAmountValue ?? 0.0, symbol: currencySymbol)),
+                ("Other Pays", PaymentFormat.currency(otherPays.paymentAmountValue ?? 0.0, symbol: currencySymbol)),
                 ("Comments", comments.isEmpty ? "N/A" : comments)
             ]
             
@@ -962,8 +931,8 @@ struct EventDetailView: View {
         self.currencySymbol = currencySymbol
         _eventName = State(initialValue: event.eventName)
         _babysitterName = State(initialValue: event.babysitterName)
-        _payPerHour = State(initialValue: String(format: "%.2f", event.payPerHour))
-        _otherPays = State(initialValue: String(format: "%.2f", event.otherPays))
+        _payPerHour = State(initialValue: PaymentFormat.amount(event.payPerHour))
+        _otherPays = State(initialValue: PaymentFormat.amount(event.otherPays))
         _comments = State(initialValue: event.comments)
         _eventDate = State(initialValue: event.date)
         _startTime = State(initialValue: event.startTime ?? Date())
@@ -983,15 +952,15 @@ struct EventDetailView: View {
         !eventName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !babysitterName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !payPerHour.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        Double(payPerHour) != nil
+        payPerHour.paymentAmountValue != nil
     }
     
     // Check if any field has changed
     private var hasChanges: Bool {
         eventName != event.eventName ||
         babysitterName != event.babysitterName ||
-        payPerHour != String(format: "%.2f", event.payPerHour) ||
-        otherPays != String(format: "%.2f", event.otherPays) ||
+        payPerHour.paymentAmountValue != event.payPerHour ||
+        otherPays.paymentAmountValue != event.otherPays ||
         comments != event.comments ||
         eventDate != event.date ||
         startTime != (event.startTime ?? Date()) ||
@@ -1005,9 +974,7 @@ struct EventDetailView: View {
                     // Event Information Card
                     VStack(spacing: 0) {
                         HStack {
-                            Text("event_information".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
+                            CardSectionHeader(title: "event_information".localized)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -1031,7 +998,7 @@ struct EventDetailView: View {
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 8)
                                     .background(Color(.systemGray6))
-                                    .cornerRadius(8)
+                                    .cornerRadius(10)
                                     .onChange(of: eventName) { _, _ in hasUnsavedChanges = hasChanges }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1106,21 +1073,14 @@ struct EventDetailView: View {
                             .padding(.vertical, 12)
                         }
                     }
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
+                    .calcCardStyle()
                     .padding(.horizontal)
                     .padding(.top)
                     
                     // Babysitter Information Card
                     VStack(spacing: 0) {
                         HStack {
-                            Text("babysitter_information".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
+                            CardSectionHeader(title: "babysitter_information".localized)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -1145,7 +1105,7 @@ struct EventDetailView: View {
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 8)
                                         .background(Color(.systemGray6))
-                                        .cornerRadius(8)
+                                        .cornerRadius(10)
                                         .onChange(of: babysitterName) { _, _ in hasUnsavedChanges = hasChanges }
                                     
                                     Button(action: {
@@ -1161,7 +1121,7 @@ struct EventDetailView: View {
                                             .padding(.horizontal, 12)
                                             .padding(.vertical, 8)
                                             .background(isPastEvent ? Color.gray.opacity(0.1) : Color.appRed.opacity(0.1))
-                                            .cornerRadius(8)
+                                            .cornerRadius(10)
                                     }
                                     .disabled(isPastEvent)
                                 }
@@ -1191,7 +1151,7 @@ struct EventDetailView: View {
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 8)
                                             .background(Color(.systemGray6))
-                                            .cornerRadius(8)
+                                            .cornerRadius(10)
                                             .onChange(of: payPerHour) { _, _ in hasUnsavedChanges = hasChanges }
                                         Text(currencySymbol)
                                             .foregroundColor(.secondary)
@@ -1221,7 +1181,7 @@ struct EventDetailView: View {
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 8)
                                             .background(Color(.systemGray6))
-                                            .cornerRadius(8)
+                                            .cornerRadius(10)
                                             .onChange(of: otherPays) { _, _ in hasUnsavedChanges = hasChanges }
                                         Text(currencySymbol)
                                             .foregroundColor(.secondary)
@@ -1261,20 +1221,13 @@ struct EventDetailView: View {
                             .padding(.vertical, 12)
                         }
                     }
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
+                    .calcCardStyle()
                     .padding(.horizontal)
                     
                     // Comments Card
                     VStack(spacing: 0) {
                         HStack {
-                            Text("comments".localized)
-                                .font(.headline)
-                                .foregroundColor(Color.appRed)
+                            CardSectionHeader(title: "comments".localized)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -1287,7 +1240,7 @@ struct EventDetailView: View {
                                 .frame(minHeight: 100)
                                 .padding(8)
                                 .background(Color(.systemGray6))
-                                .cornerRadius(8)
+                                .cornerRadius(10)
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .disabled(isPastEvent)
@@ -1297,12 +1250,7 @@ struct EventDetailView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                     }
-                    .background(
-                        Color(uiColor: UIColor { traitCollection in
-                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                        })
-                    )
-                    .cornerRadius(12)
+                    .calcCardStyle()
                     .padding(.horizontal)
                     
                     // Delete Button
@@ -1317,12 +1265,7 @@ struct EventDetailView: View {
                             Spacer()
                         }
                         .padding(.vertical, 12)
-                        .background(
-                            Color(uiColor: UIColor { traitCollection in
-                                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                            })
-                        )
-                        .cornerRadius(12)
+                        .calcCardStyle()
                     }
                     .padding(.horizontal)
                     .padding(.bottom)
@@ -1389,10 +1332,10 @@ struct EventDetailView: View {
                         DispatchQueue.main.async {
                             babysitterName = babysitter.name
                             if let rate = babysitter.hourlyRate {
-                                payPerHour = String(format: "%.2f", rate)
+                                payPerHour = PaymentFormat.amount(rate)
                             }
                             if let other = babysitter.otherPays {
-                                otherPays = String(format: "%.2f", other)
+                                otherPays = PaymentFormat.amount(other)
                             }
                             showBabysitterSelection = false
                         }
@@ -1468,8 +1411,8 @@ struct EventDetailView: View {
                 ("Date", dateFormatter.string(from: eventDate)),
                 ("Start Time", timeFormatter.string(from: startTime)),
                 ("Babysitter Name", babysitterName),
-                ("Pay per Hour", "\(currencySymbol)\(String(format: "%.2f", Double(payPerHour) ?? 0.0))"),
-                ("Other Pays", "\(currencySymbol)\(String(format: "%.2f", Double(otherPays) ?? 0.0))"),
+                ("Pay per Hour", PaymentFormat.currency(payPerHour.paymentAmountValue ?? 0.0, symbol: currencySymbol)),
+                ("Other Pays", PaymentFormat.currency(otherPays.paymentAmountValue ?? 0.0, symbol: currencySymbol)),
                 ("Comments", comments.isEmpty ? "N/A" : comments)
             ]
             
@@ -1535,7 +1478,7 @@ struct EventDetailView: View {
         guard trimmedEventName.isEmpty == false,
               trimmedName.isEmpty == false,
               trimmedRate.isEmpty == false,
-              Double(trimmedRate) != nil else {
+              trimmedRate.paymentAmountValue != nil else {
             return
         }
         
@@ -1553,8 +1496,8 @@ struct EventDetailView: View {
             date: eventDate,
             startTime: combinedDateTime,
             babysitterName: trimmedName,
-            payPerHour: Double(trimmedRate) ?? 0.0,
-            otherPays: Double(otherPays) ?? 0.0,
+            payPerHour: trimmedRate.paymentAmountValue ?? 0.0,
+            otherPays: otherPays.paymentAmountValue ?? 0.0,
             comments: comments.trimmingCharacters(in: .whitespacesAndNewlines),
             isConfirmed: isConfirmed,
             confirmedByName: isConfirmed ? trimmedName : nil

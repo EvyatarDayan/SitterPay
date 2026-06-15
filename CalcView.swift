@@ -38,19 +38,29 @@ struct CalcView: View {
     @State private var showEndTimePicker: Bool = false
     @State private var showSaveSuccess: Bool = false
     @State private var showValidationError: Bool = false
-    @State private var isSaved: Bool = false // Track if current data was saved
+    @State private var isSaved: Bool = false
     @State private var showBabysitterSelection: Bool = false
     @StateObject private var babysitterManager = BabysitterManager()
     @FocusState private var focusedField: Field?
     
     enum Field {
-        case hourlyRate, otherPays, babysitterName
+        case hourlyRate, otherPays
     }
+    
+    private let calcFieldHeight: CGFloat = 52
+    private let calcTimeFieldHeight: CGFloat = 72
     
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
+        return formatter
+    }
+    
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
         return formatter
     }
     
@@ -62,59 +72,30 @@ struct CalcView: View {
         selectedCurrency.displaySymbol
     }
     
-    // Calculate duration in hours
     private var durationHours: Double {
-        let duration = endTime.timeIntervalSince(startTime)
-        return max(0, duration / 3600.0)
+        max(0, endTime.timeIntervalSince(startTime) / 3600.0)
     }
     
-    // Calculate duration as TimeInterval
     private var duration: TimeInterval {
-        return max(0, endTime.timeIntervalSince(startTime))
+        max(0, endTime.timeIntervalSince(startTime))
     }
     
-    // Format duration from TimeInterval to readable format
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration / 3600)
-        let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
-
-        var parts: [String] = []
-        if hours > 0 {
-            let hourText = hours == 1 ? "hour".localized : "hours".localized
-            parts.append("\(hours) \(hourText)")
-        }
-        if minutes > 0 {
-            let minuteText = minutes == 1 ? "minute".localized : "minutes".localized
-            parts.append("\(minutes) \(minuteText)")
-        }
-
-        if parts.isEmpty {
-            return "0 \("minutes".localized)"
-        }
-
-        return parts.joined(separator: " \("and".localized) ")
-    }
-    
-    // Calculate total pay
     private var totalPay: Double {
-        let hourlyRateValue = Double(hourlyRate) ?? 0.0
-        let otherPaysValue = Double(otherPays) ?? 0.0
+        let hourlyRateValue = hourlyRate.paymentAmountValue ?? 0.0
+        let otherPaysValue = otherPays.paymentAmountValue ?? 0.0
         return (hourlyRateValue * durationHours) + otherPaysValue
     }
     
-    // Check if end time is after start time
     private var isTimeValid: Bool {
-        return endTime > startTime
+        endTime > startTime
     }
     
-    // Check if save button should be enabled
     private var canSaveToHistory: Bool {
         let trimmedName = babysitterName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedRate = hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmedName.isEmpty && !trimmedRate.isEmpty && Double(trimmedRate) != nil && !isSaved && isTimeValid
+        return !trimmedName.isEmpty && !trimmedRate.isEmpty && trimmedRate.paymentAmountValue != nil && !isSaved && isTimeValid
     }
     
-    // Get default start time (today at 20:00)
     private func getDefaultStartTime() -> Date {
         let calendar = Calendar.current
         let now = Date()
@@ -125,14 +106,12 @@ struct CalcView: View {
         return calendar.date(from: components) ?? now
     }
     
-    // Get default end time (4 hours after start time)
     private func getDefaultEndTime() -> Date {
-        let calendar = Calendar.current
-        let startDate = getDefaultStartTime()
-        return calendar.date(byAdding: .hour, value: 4, to: startDate) ?? startDate
+        calendar.date(byAdding: .hour, value: 4, to: getDefaultStartTime()) ?? getDefaultStartTime()
     }
     
-    // Clear all fields
+    private var calendar: Calendar { Calendar.current }
+    
     private func clearAllFields() {
         hourlyRate = ""
         otherPays = ""
@@ -140,78 +119,36 @@ struct CalcView: View {
         startTime = getDefaultStartTime()
         endTime = getDefaultEndTime()
         focusedField = nil
-        isSaved = false // Reset saved state when clearing
+        isSaved = false
     }
     
-    // Save to history
     private func saveToHistory() {
-        // Always validate first, even if button appears disabled
         let trimmedName = babysitterName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedRate = hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        if trimmedName.isEmpty || trimmedRate.isEmpty || Double(trimmedRate) == nil {
+        if trimmedName.isEmpty || trimmedRate.isEmpty || trimmedRate.paymentAmountValue == nil {
             showValidationError = true
             return
         }
         
         showValidationError = false
         
-        let hourlyRateValue = Double(hourlyRate) ?? 0.0
-        let otherPaysValue = Double(otherPays) ?? 0.0
-        let finalDuration = duration
-        let finalPay = totalPay
-        
         let record = PaymentRecord(
-            userId: UUID(), // Dummy UUID for backward compatibility
+            userId: UUID(),
             babysitterName: babysitterName,
-            hourlyRate: hourlyRateValue,
-            otherPays: otherPaysValue,
-            totalPay: finalPay,
+            hourlyRate: hourlyRate.paymentAmountValue ?? 0.0,
+            otherPays: otherPays.paymentAmountValue ?? 0.0,
+            totalPay: totalPay,
             startTime: startTime,
             endTime: endTime,
-            duration: finalDuration,
+            duration: duration,
             date: Date(),
             currencyCode: selectedCurrencyCode
         )
         
         historyManager.addRecord(record)
-        isSaved = true // Mark as saved
+        isSaved = true
         showSaveSuccess = true
-    }
-    
-    // MARK: - View Components
-    
-    private var totalPayDisplay: some View {
-        VStack(spacing: 8) {
-            Text("total_pay".localized)
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            HStack(spacing: 0) {
-                Text(currencySymbol)
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(Color.appRed)
-                Text(String(format: "%.2f", totalPay))
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(Color.appRed)
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .frame(maxWidth: .infinity)
-        .listRowBackground(Color.clear)
-    }
-    
-    private var durationDisplay: some View {
-        VStack(spacing: 4) {
-            Text("duration".localized)
-                .font(.headline)
-                .foregroundColor(.primary)
-            Text(formatDuration(duration))
-                .font(.body)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .listRowBackground(Color.clear)
     }
     
     var body: some View {
@@ -220,171 +157,64 @@ struct CalcView: View {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
                 
-                Form {
-                    Section {
-                        totalPayDisplay
-                        durationDisplay
-                    }
-                    
-                    Section("babysitter_information".localized) {
-                        HStack {
-                            TextField("babysitter_name_placeholder".localized, text: $babysitterName)
-                                .focused($focusedField, equals: .babysitterName)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.words)
-                            
-                            Button(action: {
-                                showBabysitterSelection = true
-                            }) {
-                                Image("nanny")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 24, height: 24)
-                                    .foregroundColor(.appRed)
-                            }
-                        }
-                        .onChange(of: babysitterName) { oldValue, newValue in
-                            if showValidationError && !babysitterName.isEmpty {
-                                showValidationError = false
-                            }
-                            if isSaved && oldValue != newValue {
-                                isSaved = false
-                            }
-                        }
-                    }
-                    
-                    Section("payment_information".localized) {
-                        TextField("hourly_rate".localized, text: $hourlyRate)
-                            .keyboardType(.decimalPad)
-                            .focused($focusedField, equals: .hourlyRate)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .onChange(of: hourlyRate) { oldValue, newValue in
-                                let filtered = newValue.filter { "0123456789.".contains($0) }
-                                if filtered != newValue {
-                                    hourlyRate = filtered
-                                }
-                                if showValidationError && !newValue.isEmpty && Double(newValue) != nil {
-                                    showValidationError = false
-                                }
-                                if isSaved && oldValue != newValue {
-                                    isSaved = false
-                                }
-                            }
-                        
-                        TextField("other_pays".localized, text: $otherPays)
-                            .keyboardType(.decimalPad)
-                            .focused($focusedField, equals: .otherPays)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .onChange(of: otherPays) { oldValue, newValue in
-                                let filtered = newValue.filter { "0123456789.".contains($0) }
-                                if filtered != newValue {
-                                    otherPays = filtered
-                                }
-                                if isSaved && oldValue != newValue {
-                                    isSaved = false
-                                }
-                            }
-                    }
-                    
-                    Section("time".localized) {
-                        Button(action: {
-                            showStartTimePicker = true
-                        }) {
-                            HStack {
-                                Text("start_time".localized)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(timeFormatter.string(from: startTime))
-                                    .foregroundColor(.appRed)
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.appRed)
-                            }
-                        }
-                        
-                        Button(action: {
-                            showEndTimePicker = true
-                        }) {
-                            HStack {
-                                Text("end_time".localized)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text(timeFormatter.string(from: endTime))
-                                    .foregroundColor(.appRed)
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.appRed)
-                            }
-                        }
-                        
-                        if !isTimeValid {
-                            Text("end_time_must_be_after_start_time".localized)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                        }
-                    }
-                }
-                .scrollContentBackground(.hidden)
-            }
-            .onChange(of: startTime) { oldValue, newValue in
-                if isSaved && oldValue != newValue {
-                    isSaved = false
-                }
-            }
-            .onChange(of: endTime) { oldValue, newValue in
-                if isSaved && oldValue != newValue {
-                    isSaved = false
-                }
-            }
-            .sheet(isPresented: $showStartTimePicker) {
                 VStack(spacing: 0) {
-                    DatePicker("", selection: $startTime, displayedComponents: [.date, .hourAndMinute])
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .frame(height: 200)
+                    resultHeroCard
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .padding(.bottom, 8)
+                    
+                    VStack(spacing: 12) {
+                        babysitterCard
+                        ratesCard
+                        timeCard
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
                 }
-                .presentationDetents([.height(250)])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $showEndTimePicker) {
-                VStack(spacing: 0) {
-                    DatePicker("", selection: $endTime, displayedComponents: [.date, .hourAndMinute])
-                        .datePickerStyle(.wheel)
-                        .labelsHidden()
-                        .frame(height: 200)
-                }
-                .presentationDetents([.height(250)])
-                .presentationDragIndicator(.visible)
             }
             .navigationTitle("calculate".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button("reset".localized) {
                         clearAllFields()
                     }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("save_to_history".localized) {
-                        saveToHistory()
-                    }
-                    .disabled(!canSaveToHistory || isSaved)
+                    .foregroundColor(Color.appRed)
                 }
                 
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("done".localized) { focusedField = nil }
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                Button(action: saveToHistory) {
+                    Text("save_to_history".localized)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(canSaveToHistory && !isSaved ? Color.appRed : Color.gray)
+                        .clipShape(Capsule())
+                }
+                .disabled(!canSaveToHistory || isSaved)
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+                .background(Color(.systemGroupedBackground))
+            }
+            .onChange(of: startTime) { _, _ in
+                if isSaved { isSaved = false }
+            }
+            .onChange(of: endTime) { _, _ in
+                if isSaved { isSaved = false }
+            }
+            .sheet(isPresented: $showStartTimePicker) {
+                timePickerSheet(selection: $startTime)
+            }
+            .sheet(isPresented: $showEndTimePicker) {
+                timePickerSheet(selection: $endTime)
             }
             .alert("pay_saved_to_history".localized, isPresented: $showSaveSuccess) {
                 Button("ok".localized) {
@@ -397,11 +227,13 @@ struct CalcView: View {
                     onSelect: { babysitter in
                         babysitterName = babysitter.name
                         if let rate = babysitter.hourlyRate {
-                            hourlyRate = String(format: "%.2f", rate)
+                            hourlyRate = PaymentFormat.amount(rate)
                         }
                         if let other = babysitter.otherPays {
-                            otherPays = String(format: "%.2f", other)
+                            otherPays = PaymentFormat.amount(other)
                         }
+                        showValidationError = false
+                        if isSaved { isSaved = false }
                         showBabysitterSelection = false
                     }
                 )
@@ -409,5 +241,261 @@ struct CalcView: View {
             .id(localizationManager.currentLanguage)
         }
     }
+    
+    // MARK: - Cards
+    
+    private var resultHeroCard: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(currencySymbol)
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                Text(PaymentFormat.amount(totalPay))
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+            }
+            .foregroundColor(Color.appRed)
+            .contentTransition(.numericText())
+            
+            HStack(spacing: 0) {
+                summaryMetric(
+                    icon: "Duration",
+                    label: "duration".localized,
+                    value: DurationFormat.compact(duration)
+                )
+                
+                Rectangle()
+                    .fill(Color(.separator))
+                    .frame(width: 1, height: 36)
+                
+                summaryMetric(
+                    icon: "Payment",
+                    label: "pay_per_hour".localized,
+                    value: hourlyRate.isEmpty ? "—" : PaymentFormat.currency(hourlyRate.paymentAmountValue ?? 0, symbol: currencySymbol)
+                )
+            }
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
+        .calcCardStyle()
+    }
+    
+    private func summaryMetric(icon: String, label: String, value: String) -> some View {
+        VStack(spacing: 4) {
+            Image(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .foregroundColor(.secondary)
+            
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var babysitterCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            CardSectionHeader(title: "babysitter_information".localized)
+            
+            Button {
+                showBabysitterSelection = true
+            } label: {
+                HStack(spacing: 10) {
+                    Text(babysitterName.isEmpty ? "select_babysitter_placeholder".localized : babysitterName)
+                        .font(.body)
+                        .foregroundColor(babysitterName.isEmpty ? .secondary : .primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Image("nanny")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(.appRed)
+                        .padding(10)
+                        .background(Color.appRed.opacity(0.12))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: calcFieldHeight)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(showValidationError && babysitterName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 1.5)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .calcCardStyle()
+    }
+    
+    private var ratesCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            CardSectionHeader(title: "payment_information".localized)
+            
+            HStack(spacing: 12) {
+                rateField(
+                    title: "hourly_rate".localized,
+                    text: $hourlyRate,
+                    field: .hourlyRate,
+                    showError: showValidationError && (hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).paymentAmountValue == nil)
+                )
+                
+                rateField(
+                    title: "other_pays".localized,
+                    text: $otherPays,
+                    field: .otherPays,
+                    showError: false
+                )
+            }
+        }
+        .padding(16)
+        .calcCardStyle()
+    }
+    
+    private func rateField(title: String, text: Binding<String>, field: Field, showError: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            HStack(spacing: 4) {
+                Text(currencySymbol)
+                    .foregroundColor(.secondary)
+                TextField("0.00", text: text)
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: field)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: calcFieldHeight)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(showError ? Color.red : Color.clear, lineWidth: 1.5)
+            )
+            .onChange(of: text.wrappedValue) { oldValue, newValue in
+                let filtered = newValue.filteringPaymentInput()
+                if filtered != newValue {
+                    text.wrappedValue = filtered
+                }
+                if showValidationError && !newValue.isEmpty && newValue.paymentAmountValue != nil {
+                    showValidationError = false
+                }
+                if isSaved && oldValue != newValue {
+                    isSaved = false
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var timeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            CardSectionHeader(title: "time".localized)
+            
+            HStack(spacing: 12) {
+                timeField(
+                    title: "start_time".localized,
+                    date: $startTime,
+                    showPicker: { showStartTimePicker = true }
+                )
+                
+                timeField(
+                    title: "end_time".localized,
+                    date: $endTime,
+                    showPicker: { showEndTimePicker = true }
+                )
+            }
+            
+            if !isTimeValid {
+                Text("end_time_must_be_after_start_time".localized)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+        }
+        .padding(16)
+        .calcCardStyle()
+    }
+    
+    private func adjustTime(_ date: Binding<Date>, byMinutes minutes: Int) {
+        guard let newDate = calendar.date(byAdding: .minute, value: minutes, to: date.wrappedValue) else { return }
+        date.wrappedValue = newDate
+        if isSaved { isSaved = false }
+    }
+    
+    private func timeField(title: String, date: Binding<Date>, showPicker: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
+            Button(action: showPicker) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text(timeFormatter.string(from: date.wrappedValue))
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.appRed)
+                    
+                    Text(dateFormatter.string(from: date.wrappedValue))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            
+            VStack(spacing: 4) {
+                Button {
+                    adjustTime(date, byMinutes: 30)
+                } label: {
+                    Image(systemName: "chevron.up")
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 32, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    adjustTime(date, byMinutes: -30)
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .frame(width: 32, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .foregroundColor(.appRed)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: calcTimeFieldHeight)
+        .background(Color(.systemGray6))
+        .cornerRadius(10)
+    }
+    
+    private func timePickerSheet(selection: Binding<Date>) -> some View {
+        VStack(spacing: 0) {
+            DatePicker("", selection: selection, displayedComponents: [.date, .hourAndMinute])
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .frame(height: 200)
+        }
+        .presentationDetents([.height(250)])
+        .presentationDragIndicator(.visible)
+    }
 }
-

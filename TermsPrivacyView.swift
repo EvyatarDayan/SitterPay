@@ -35,7 +35,11 @@ struct TermsPrivacyView: View {
                                 .font(.body)
                                 .lineSpacing(4)
                         }
-                        .padding()
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .calcCardStyle()
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                     }
                     .tag(0)
                     
@@ -45,7 +49,11 @@ struct TermsPrivacyView: View {
                                 .font(.body)
                                 .lineSpacing(4)
                         }
-                        .padding()
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .calcCardStyle()
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                     }
                     .tag(1)
                     
@@ -55,7 +63,11 @@ struct TermsPrivacyView: View {
                                 .font(.body)
                                 .lineSpacing(4)
                         }
-                        .padding()
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .calcCardStyle()
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                     }
                     .tag(2)
                 }
