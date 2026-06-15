@@ -12,29 +12,20 @@ struct BabysitterSelectionView: View {
     @ObservedObject private var localizationManager = LocalizationManager.shared
     @Environment(\.dismiss) var dismiss
     let onSelect: (Babysitter) -> Void
-    @State private var showBabysittersView = false
+    @State private var showAddBabysitter = false
     
     var body: some View {
         NavigationView {
             Group {
                 if babysitterManager.babysitters.isEmpty {
-                    VStack(spacing: 20) {
+                    VStack {
                         Spacer()
-                        Text("no_babysitters".localized)
-                            .font(.title3)
+                        Text("no_babysitters_select_message".localized)
+                            .font(.body)
                             .foregroundColor(.secondary)
-                        
-                        Button(action: {
-                            showBabysittersView = true
-                        }) {
-                            Text("add_babysitter".localized)
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 12)
-                                .background(Color.appRed)
-                                .cornerRadius(12)
-                        }
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .padding(.horizontal, 32)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -74,17 +65,31 @@ struct BabysitterSelectionView: View {
                         dismiss()
                     }
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showAddBabysitter = true
+                    }) {
+                        Image("Add")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(Color.appRed)
+                    }
+                }
             }
             .id(localizationManager.currentLanguage)
             .onAppear {
                 // Reload babysitters when view appears to get latest data
                 babysitterManager.loadBabysitters()
             }
-            .sheet(isPresented: $showBabysittersView) {
-                BabysittersView()
+            .sheet(isPresented: $showAddBabysitter) {
+                AddEditBabysitterView(
+                    babysitterManager: babysitterManager,
+                    babysitter: nil
+                )
             }
-            .onChange(of: showBabysittersView) { _, isPresented in
-                // Reload babysitters when BabysittersView is dismissed
+            .onChange(of: showAddBabysitter) { _, isPresented in
                 if !isPresented {
                     babysitterManager.loadBabysitters()
                 }

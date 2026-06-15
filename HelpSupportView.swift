@@ -27,6 +27,8 @@ struct HelpSupportView: View {
     }
     
     let supportPhone = "+46 123 456 789"
+    private let supportEmailAddress = "abashelariprod@gmail.com"
+    private let supportWebsiteURL = "https://abashelari.com/"
     
     private func populateUserInfo() {
         // User info can be pre-filled if needed in the future
@@ -146,11 +148,23 @@ struct HelpSupportView: View {
                                     .padding(.top, 32)
                                     .padding(.bottom, 32)
                                 
-                                Text("email_contact".localized)
-                                    .font(.subheadline)
+                                if let emailURL = URL(string: "mailto:\(supportEmailAddress)") {
+                                    Link(destination: emailURL) {
+                                        Text("email_contact".localized)
+                                            .font(.subheadline)
+                                            .foregroundColor(Color.appRed)
+                                            .underline()
+                                    }
+                                }
                                 
-                                Text("website_contact".localized)
-                                    .font(.subheadline)
+                                if let websiteURL = URL(string: supportWebsiteURL) {
+                                    Link(destination: websiteURL) {
+                                        Text("website_contact".localized)
+                                            .font(.subheadline)
+                                            .foregroundColor(Color.appRed)
+                                            .underline()
+                                    }
+                                }
                                 
                                 Divider()
                                     .padding(.vertical, 8)

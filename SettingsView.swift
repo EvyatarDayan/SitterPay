@@ -29,13 +29,13 @@ struct SettingsView: View {
     
     private func flagForLanguage(_ language: String) -> String {
         let languageFlags: [String: String] = [
-            "English": "🇺🇸",
+            "English": "🇬🇧",
             "German": "🇩🇪",
             "French": "🇫🇷",
             "Swedish": "🇸🇪",
             "Spanish": "🇪🇸"
         ]
-        return languageFlags[language] ?? "🇺🇸"
+        return languageFlags[language] ?? "🇬🇧"
     }
 
     var body: some View {
@@ -565,7 +565,7 @@ struct LanguageSelectionView: View {
     @Binding var selectedLanguage: String
     
     let languages = [
-        ("🇺🇸", "English"),
+        ("🇬🇧", "English"),
         ("🇩🇪", "German"),
         ("🇫🇷", "French"),
         ("🇸🇪", "Swedish"),

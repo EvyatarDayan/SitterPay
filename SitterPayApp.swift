@@ -86,18 +86,16 @@ struct SitterPayApp: App {
 
 struct AppRootView: View {
     @Binding var isDarkMode: Bool
-    @State private var showLogo = true
+    @AppStorage(WelcomeStorage.skipWelcomeKey) private var skipWelcomeScreen = false
+    @State private var welcomeDismissed = false
     
     var body: some View {
         Group {
-            if showLogo {
-                LogoView {
-                    withAnimation {
-                        showLogo = false
-                    }
+            if !skipWelcomeScreen && !welcomeDismissed {
+                WelcomeView {
+                    welcomeDismissed = true
                 }
             } else {
-                // Show main app content
                 ContentView()
                     .preferredColorScheme(isDarkMode ? .dark : .light)
                     .onChange(of: isDarkMode) { _, _ in

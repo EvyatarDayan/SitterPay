@@ -23,9 +23,12 @@ struct BabysittersView: View {
                 if babysitterManager.babysitters.isEmpty {
                     VStack {
                         Spacer()
-                        Text("no_babysitters".localized)
-                            .font(.title3)
+                        Text("no_babysitters_select_message".localized)
+                            .font(.body)
                             .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .padding(.horizontal, 32)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

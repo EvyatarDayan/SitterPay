@@ -22,26 +22,14 @@ struct SelectBabysitterPopupView: View {
         NavigationView {
             Group {
                 if babysitterManager.babysitters.isEmpty {
-                    VStack(spacing: 20) {
+                    VStack {
                         Spacer()
-                        Text("no_babysitters".localized)
-                            .font(.title3)
+                        Text("no_babysitters_select_message".localized)
+                            .font(.body)
                             .foregroundColor(.secondary)
-                        
-                        Button(action: {
-                            editingBabysitter = nil
-                            showAddBabysitter = true
-                        }) {
-                            Image("Add")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 24, height: 24)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 12)
-                                .background(Color.appRed)
-                                .cornerRadius(12)
-                        }
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .padding(.horizontal, 32)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

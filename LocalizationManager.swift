@@ -259,6 +259,13 @@ class Translations {
             "es": "Sin niñeras",
             "de": "Keine Babysitter"
         ],
+        "no_babysitters_select_message": [
+            "en": "There are no babysitters on your list - tap the + button to add the first one.",
+            "fr": "Il n'y a aucune baby-sitter dans votre liste - appuyez sur le bouton + pour en ajouter une.",
+            "sv": "Det finns inga barnvakter i din lista - tryck på +-knappen för att lägga till den första.",
+            "es": "No hay niñeras en tu lista - pulsa el botón + para añadir la primera.",
+            "de": "Es sind keine Babysitter in Ihrer Liste - tippen Sie auf die +-Schaltfläche, um den ersten hinzuzufügen."
+        ],
         "hourly_rate_required": [
             "en": "Hourly rate is required",
             "fr": "Le taux horaire est requis",
@@ -2253,11 +2260,11 @@ class Translations {
             "de": "abashelariprod@gmail.com"
         ],
         "website_contact": [
-            "en": "https://abashelariprod.wordpress.com/",
-            "fr": "https://abashelariprod.wordpress.com/",
-            "sv": "https://abashelariprod.wordpress.com/",
-            "es": "https://abashelariprod.wordpress.com/",
-            "de": "https://abashelariprod.wordpress.com/"
+            "en": "https://abashelari.com/",
+            "fr": "https://abashelari.com/",
+            "sv": "https://abashelari.com/",
+            "es": "https://abashelari.com/",
+            "de": "https://abashelari.com/"
         ],
         "or": [
             "en": "OR",
@@ -2440,6 +2447,34 @@ class Translations {
             "sv": "%@ timlön är %@%@ + %@%@ extra",
             "es": "El pago por hora de %@ es %@%@ + %@%@ extra",
             "de": "%@ Stundenlohn beträgt %@%@ + %@%@ extra"
+        ],
+        "welcome_title": [
+            "en": "Welcome to SitterPay",
+            "fr": "Bienvenue sur SitterPay",
+            "sv": "Välkommen till SitterPay",
+            "es": "Bienvenido a SitterPay",
+            "de": "Willkommen bei SitterPay"
+        ],
+        "welcome_description": [
+            "en": "Your go-to companion for babysitting payments. Track live sessions, calculate pay instantly, manage babysitters, and keep your payment history - all in one place.",
+            "fr": "Votre compagnon idéal pour les paiements de garde d'enfants. Suivez les sessions en direct, calculez la rémunération instantanément, gérez les baby-sitters et conservez votre historique de paiements - le tout en un seul endroit.",
+            "sv": "Din kompletta lösning för barnpassningsbetalningar. Spåra live-sessioner, beräkna lön direkt, hantera barnvakter och behåll din betalningshistorik - allt på ett ställe.",
+            "es": "Tu compañero ideal para pagos de cuidado infantil. Registra sesiones en vivo, calcula el pago al instante, gestiona niñeras y guarda tu historial de pagos - todo en un solo lugar.",
+            "de": "Ihr Begleiter für Babysitting-Zahlungen. Verfolgen Sie Live-Sitzungen, berechnen Sie den Lohn sofort, verwalten Sie Babysitter und behalten Sie Ihre Zahlungshistorie - alles an einem Ort."
+        ],
+        "welcome_start": [
+            "en": "Start",
+            "fr": "Commencer",
+            "sv": "Starta",
+            "es": "Comenzar",
+            "de": "Starten"
+        ],
+        "welcome_dont_show_again": [
+            "en": "Don't show this again",
+            "fr": "Ne plus afficher",
+            "sv": "Visa inte igen",
+            "es": "No volver a mostrar",
+            "de": "Nicht mehr anzeigen"
         ]
     ]
     
