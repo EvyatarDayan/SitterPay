@@ -291,7 +291,11 @@ struct PaymentDetailView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                ScrollView {
                 VStack(spacing: 20) {
                     // Header Card - Babysitter Name and Event
                     VStack(spacing: 16) {
@@ -591,10 +595,11 @@ struct PaymentDetailView: View {
                     .padding(.horizontal)
                     .padding(.bottom)
                 }
+                }
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("payment_details".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("export".localized) {

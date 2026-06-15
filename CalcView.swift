@@ -184,111 +184,81 @@ struct CalcView: View {
     private var totalPayDisplay: some View {
         VStack(spacing: 8) {
             Text("total_pay".localized)
-                .font(.system(size: 16, weight: .bold))
+                .font(.headline)
                 .foregroundColor(.primary)
             
             HStack(spacing: 0) {
                 Text(currencySymbol)
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(Color.appRed)
                 Text(String(format: "%.2f", totalPay))
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(Color.appRed)
             }
-            .frame(minWidth: 200)
+            .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
+        .listRowBackground(Color.clear)
     }
     
     private var durationDisplay: some View {
         VStack(spacing: 4) {
             Text("duration".localized)
-                .font(.system(size: 16, weight: .bold))
+                .font(.headline)
                 .foregroundColor(.primary)
             Text(formatDuration(duration))
-                .font(.system(size: 20, weight: .medium))
+                .font(.body)
                 .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity)
+        .listRowBackground(Color.clear)
     }
     
-    private var babysitterNameField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("babysitter_name".localized)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            HStack(spacing: 8) {
-                TextField("babysitter_name".localized, text: $babysitterName)
-                    .font(.body)
-                    .focused($focusedField, equals: .babysitterName)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(showValidationError && babysitterName.isEmpty ? Color.red : Color.clear, lineWidth: 2)
-                    )
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
                 
-                Button(action: {
-                    showBabysitterSelection = true
-                }) {
-                    Image("nanny")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 26, height: 26)
-                        .foregroundColor(Color.appRed)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.appRed.opacity(0.1))
-                        .cornerRadius(8)
-                }
-            }
-            .onChange(of: babysitterName) { oldValue, newValue in
-                if showValidationError && !babysitterName.isEmpty {
-                    showValidationError = false
-                }
-                if isSaved && oldValue != newValue {
-                    isSaved = false
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(height: 85)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var payFields: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("pay_per_hour".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                Form {
+                    Section {
+                        totalPayDisplay
+                        durationDisplay
+                    }
                     
-                    HStack(spacing: 4) {
-                        TextField("0.00", text: $hourlyRate)
+                    Section("babysitter_information".localized) {
+                        HStack {
+                            TextField("babysitter_name_placeholder".localized, text: $babysitterName)
+                                .focused($focusedField, equals: .babysitterName)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.words)
+                            
+                            Button(action: {
+                                showBabysitterSelection = true
+                            }) {
+                                Image("nanny")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                    .foregroundColor(.appRed)
+                            }
+                        }
+                        .onChange(of: babysitterName) { oldValue, newValue in
+                            if showValidationError && !babysitterName.isEmpty {
+                                showValidationError = false
+                            }
+                            if isSaved && oldValue != newValue {
+                                isSaved = false
+                            }
+                        }
+                    }
+                    
+                    Section("payment_information".localized) {
+                        TextField("hourly_rate".localized, text: $hourlyRate)
                             .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.leading)
-                            .font(.body)
                             .focused($focusedField, equals: .hourlyRate)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(showValidationError && (hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || Double(hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines)) == nil) ? Color.red : Color.clear, lineWidth: 2)
-                            )
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
                             .onChange(of: hourlyRate) { oldValue, newValue in
                                 let filtered = newValue.filter { "0123456789.".contains($0) }
                                 if filtered != newValue {
@@ -301,34 +271,12 @@ struct CalcView: View {
                                     isSaved = false
                                 }
                             }
-                        Text(currencySymbol)
-                            .foregroundColor(.secondary)
-                            .font(.body)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(width: 0.5)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("other_pays".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    HStack(spacing: 4) {
-                        TextField("0.00", text: $otherPays)
+                        
+                        TextField("other_pays".localized, text: $otherPays)
                             .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.leading)
-                            .font(.body)
                             .focused($focusedField, equals: .otherPays)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
                             .onChange(of: otherPays) { oldValue, newValue in
                                 let filtered = newValue.filter { "0123456789.".contains($0) }
                                 if filtered != newValue {
@@ -338,187 +286,101 @@ struct CalcView: View {
                                     isSaved = false
                                 }
                             }
-                        Text(currencySymbol)
-                            .foregroundColor(.secondary)
-                            .font(.body)
                     }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .frame(height: 85)
-        }
-        .frame(maxWidth: .infinity)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var timeFields: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("start_time".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                     
-                    Button(action: {
-                        showStartTimePicker = true
-                    }) {
-                        HStack {
-                            Text(timeFormatter.string(from: startTime))
-                                .font(.body)
-                                .foregroundColor(.primary)
-                            Spacer()
+                    Section("time".localized) {
+                        Button(action: {
+                            showStartTimePicker = true
+                        }) {
+                            HStack {
+                                Text("start_time".localized)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text(timeFormatter.string(from: startTime))
+                                    .foregroundColor(.appRed)
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.appRed)
+                            }
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(width: 0.5)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("end_time".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Button(action: {
-                        showEndTimePicker = true
-                    }) {
-                        HStack {
-                            Text(timeFormatter.string(from: endTime))
-                                .font(.body)
-                                .foregroundColor(.primary)
-                            Spacer()
+                        
+                        Button(action: {
+                            showEndTimePicker = true
+                        }) {
+                            HStack {
+                                Text("end_time".localized)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text(timeFormatter.string(from: endTime))
+                                    .foregroundColor(.appRed)
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.appRed)
+                            }
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .frame(height: 85)
-        }
-        .frame(maxWidth: .infinity)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var saveButton: some View {
-        Button(action: {
-            saveToHistory()
-        }) {
-            Text("save_to_history".localized)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(canSaveToHistory && !isSaved ? Color.appRed : Color.gray)
-                .cornerRadius(12)
-        }
-        .disabled(!canSaveToHistory || isSaved)
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
-        .padding(.bottom, 20)
-    }
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                // Background that extends to top
-                Color(.systemGroupedBackground)
-                    .ignoresSafeArea(.all)
-                
-                VStack(spacing: 0) {
-                    ScrollView {
-                        VStack(spacing: 20) {
-                        totalPayDisplay
-                            .padding(.top, 20)
-                        
-                        durationDisplay
-                        
-                        babysitterNameField
-                        
-                        payFields
-                        
-                        timeFields
                         
                         if !isTimeValid {
                             Text("end_time_must_be_after_start_time".localized)
                                 .font(.caption)
                                 .foregroundColor(.red)
-                                .padding(.horizontal)
-                                .padding(.top, 4)
                         }
                     }
-                    .padding(.bottom, 20)
                 }
-                
-                saveButton
+                .scrollContentBackground(.hidden)
             }
             .onChange(of: startTime) { oldValue, newValue in
-                // Reset saved state when field changes
                 if isSaved && oldValue != newValue {
                     isSaved = false
                 }
             }
             .onChange(of: endTime) { oldValue, newValue in
-                // Reset saved state when field changes
                 if isSaved && oldValue != newValue {
                     isSaved = false
                 }
             }
             .sheet(isPresented: $showStartTimePicker) {
-                    VStack(spacing: 0) {
-                        DatePicker("", selection: $startTime, displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.wheel)
-                            .labelsHidden()
-                            .frame(height: 200)
-                    }
-                    .presentationDetents([.height(250)])
-                    .presentationDragIndicator(.visible)
+                VStack(spacing: 0) {
+                    DatePicker("", selection: $startTime, displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .frame(height: 200)
                 }
-                .sheet(isPresented: $showEndTimePicker) {
-                    VStack(spacing: 0) {
-                        DatePicker("", selection: $endTime, displayedComponents: [.date, .hourAndMinute])
-                            .datePickerStyle(.wheel)
-                            .labelsHidden()
-                            .frame(height: 200)
-                    }
-                    .presentationDetents([.height(250)])
-                    .presentationDragIndicator(.visible)
+                .presentationDetents([.height(250)])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showEndTimePicker) {
+                VStack(spacing: 0) {
+                    DatePicker("", selection: $endTime, displayedComponents: [.date, .hourAndMinute])
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .frame(height: 200)
                 }
+                .presentationDetents([.height(250)])
+                .presentationDragIndicator(.visible)
             }
             .navigationTitle("calculate".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("reset".localized) { clearAllFields() }
-                        .foregroundColor(Color.appRed)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("reset".localized) {
+                        clearAllFields()
+                    }
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("save_to_history".localized) {
+                        saveToHistory()
+                    }
+                    .disabled(!canSaveToHistory || isSaved)
+                }
+                
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("done".localized) { focusedField = nil }
@@ -544,6 +406,7 @@ struct CalcView: View {
                     }
                 )
             }
+            .id(localizationManager.currentLanguage)
         }
     }
 }

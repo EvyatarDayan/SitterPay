@@ -16,49 +16,54 @@ struct BabysitterSelectionView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if babysitterManager.babysitters.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text("no_babysitters_select_message".localized)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                            .padding(.horizontal, 32)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(babysitterManager.babysitters) { babysitter in
-                            Button(action: {
-                                onSelect(babysitter)
-                            }) {
-                                BabysitterRowView(babysitter: babysitter, onNameTap: {
-                                    onSelect(babysitter)
-                                })
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
-                                .background(
-                                    Color(uiColor: UIColor { traitCollection in
-                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                    })
-                                )
-                                .cornerRadius(12)
-                            }
-                            .buttonStyle(.plain)
-                            .listRowBackground(Color(.systemGroupedBackground))
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                Group {
+                    if babysitterManager.babysitters.isEmpty {
+                        VStack {
+                            Spacer()
+                            Text("no_babysitters_select_message".localized)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .padding(.horizontal, 32)
+                            Spacer()
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List {
+                            ForEach(babysitterManager.babysitters) { babysitter in
+                                Button(action: {
+                                    onSelect(babysitter)
+                                }) {
+                                    BabysitterRowView(babysitter: babysitter, onNameTap: {
+                                        onSelect(babysitter)
+                                    })
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        Color(uiColor: UIColor { traitCollection in
+                                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
+                                        })
+                                    )
+                                    .cornerRadius(12)
+                                }
+                                .buttonStyle(.plain)
+                                .listRowBackground(Color(.systemGroupedBackground))
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                            }
+                        }
+                        .scrollContentBackground(.hidden)
                     }
-                    .scrollContentBackground(.hidden)
                 }
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("select_babysitter".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("close".localized) {

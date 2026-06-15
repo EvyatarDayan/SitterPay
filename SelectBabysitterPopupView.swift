@@ -20,66 +20,71 @@ struct SelectBabysitterPopupView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if babysitterManager.babysitters.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text("no_babysitters_select_message".localized)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                            .padding(.horizontal, 32)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(babysitterManager.babysitters) { babysitter in
-                            Button(action: {
-                                babysitterName = babysitter.name
-                                if let rate = babysitter.hourlyRate {
-                                    hourlyRate = String(format: "%.2f", rate)
-                                }
-                                if let other = babysitter.otherPays {
-                                    otherPays = String(format: "%.2f", other)
-                                }
-                                onDismiss()
-                            }) {
-                                HStack(alignment: .center) {
-                                    Text(babysitter.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    if let rate = babysitter.hourlyRate {
-                                        Text("\(currencySymbol)\(String(format: "%.2f", rate))/hr")
-                                            .font(.subheadline)
-                                            .foregroundColor(Color.appRed)
-                                    }
-                                }
-                                .frame(height: 60)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
-                                .background(
-                                    Color(uiColor: UIColor { traitCollection in
-                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                    })
-                                )
-                                .cornerRadius(12)
-                            }
-                            .listRowBackground(Color(.systemGroupedBackground))
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                Group {
+                    if babysitterManager.babysitters.isEmpty {
+                        VStack {
+                            Spacer()
+                            Text("no_babysitters_select_message".localized)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .padding(.horizontal, 32)
+                            Spacer()
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List {
+                            ForEach(babysitterManager.babysitters) { babysitter in
+                                Button(action: {
+                                    babysitterName = babysitter.name
+                                    if let rate = babysitter.hourlyRate {
+                                        hourlyRate = String(format: "%.2f", rate)
+                                    }
+                                    if let other = babysitter.otherPays {
+                                        otherPays = String(format: "%.2f", other)
+                                    }
+                                    onDismiss()
+                                }) {
+                                    HStack(alignment: .center) {
+                                        Text(babysitter.name)
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+                                        
+                                        Spacer()
+                                        
+                                        if let rate = babysitter.hourlyRate {
+                                            Text("\(currencySymbol)\(String(format: "%.2f", rate))/hr")
+                                                .font(.subheadline)
+                                                .foregroundColor(Color.appRed)
+                                        }
+                                    }
+                                    .frame(height: 60)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        Color(uiColor: UIColor { traitCollection in
+                                            traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
+                                        })
+                                    )
+                                    .cornerRadius(12)
+                                }
+                                .listRowBackground(Color(.systemGroupedBackground))
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                            }
+                        }
+                        .scrollContentBackground(.hidden)
                     }
-                    .scrollContentBackground(.hidden)
                 }
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("select_babysitter".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("cancel".localized) {

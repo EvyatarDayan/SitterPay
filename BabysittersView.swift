@@ -19,52 +19,57 @@ struct BabysittersView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if babysitterManager.babysitters.isEmpty {
-                    VStack {
-                        Spacer()
-                        Text("no_babysitters_select_message".localized)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                            .padding(.horizontal, 32)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(babysitterManager.babysitters) { babysitter in
-                            BabysitterRowView(
-                                babysitter: babysitter,
-                                onNameTap: {
-                                    editingBabysitter = babysitter
-                                }
-                            )
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 16)
-                            .background(
-                                Color(uiColor: UIColor { traitCollection in
-                                    traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-                                })
-                            )
-                            .cornerRadius(12)
-                            .listRowBackground(Color(.systemGroupedBackground))
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                Group {
+                    if babysitterManager.babysitters.isEmpty {
+                        VStack {
+                            Spacer()
+                            Text("no_babysitters_select_message".localized)
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .padding(.horizontal, 32)
+                            Spacer()
                         }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                babysitterManager.deleteBabysitter(babysitterManager.babysitters[index])
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List {
+                            ForEach(babysitterManager.babysitters) { babysitter in
+                                BabysitterRowView(
+                                    babysitter: babysitter,
+                                    onNameTap: {
+                                        editingBabysitter = babysitter
+                                    }
+                                )
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
+                                .background(
+                                    Color(uiColor: UIColor { traitCollection in
+                                        traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
+                                    })
+                                )
+                                .cornerRadius(12)
+                                .listRowBackground(Color(.systemGroupedBackground))
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 6, leading: 4, bottom: 6, trailing: 4))
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    babysitterManager.deleteBabysitter(babysitterManager.babysitters[index])
+                                }
                             }
                         }
+                        .scrollContentBackground(.hidden)
                     }
-                    .scrollContentBackground(.hidden)
                 }
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle("my_babysitters".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
@@ -241,39 +246,145 @@ struct AddEditBabysitterView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Name field
-                    nameField
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                Form {
+                Section("babysitter_information".localized) {
+                    HStack {
+                        TextField("babysitter_name_placeholder".localized, text: $name)
+                            .focused($focusedField, equals: .name)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.words)
+                        
+                        Button(action: {
+                            showContactPicker = true
+                        }) {
+                            Image(systemName: "person.crop.circle.badge.plus")
+                                .foregroundColor(.appRed)
+                        }
+                    }
                     
-                    // Address field with autocomplete
-                    addressField
+                    TextField("address".localized, text: $address)
+                        .focused($focusedField, equals: .address)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.words)
+                        .onChange(of: address) { _, newValue in
+                            if !newValue.isEmpty {
+                                let hasExistingMatches = !existingAddresses.filter { $0.localizedCaseInsensitiveContains(newValue) }.isEmpty
+                                
+                                if hasExistingMatches {
+                                    showAddressSuggestions = true
+                                } else if newValue.count >= 3 {
+                                    searchCompleter.queryFragment = newValue
+                                    showAddressSuggestions = true
+                                } else {
+                                    showAddressSuggestions = false
+                                }
+                            } else {
+                                showAddressSuggestions = false
+                                searchCompleter.queryFragment = ""
+                            }
+                        }
+                        .onChange(of: focusedField) { _, newValue in
+                            if newValue == .address && !address.isEmpty {
+                                showAddressSuggestions = true
+                            } else if newValue != .address {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    showAddressSuggestions = false
+                                }
+                            }
+                        }
                     
-                    // Phone field
-                    phoneField
-                    
-                    // Email field
-                    emailField
-                    
-                    // Hourly rate and Extras in one row
-                    payFields
+                    if showAddressSuggestions && !allAddressSuggestions.isEmpty {
+                        ForEach(Array(allAddressSuggestions.prefix(5).enumerated()), id: \.element.id) { _, suggestion in
+                            Button(action: {
+                                let fullAddress = suggestion.subtitle.isEmpty ? suggestion.title : "\(suggestion.title), \(suggestion.subtitle)"
+                                address = fullAddress
+                                showAddressSuggestions = false
+                                focusedField = nil
+                            }) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(suggestion.title)
+                                        .foregroundColor(.primary)
+                                    if !suggestion.subtitle.isEmpty {
+                                        Text(suggestion.subtitle)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                .padding(.top, 20)
-                .padding(.bottom, 100) // Space for save button
+                
+                Section("contact_information".localized) {
+                    TextField("phone_number".localized, text: $phoneNumber)
+                        .keyboardType(.phonePad)
+                        .focused($focusedField, equals: .phoneNumber)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: phoneNumber) { _, newValue in
+                            let filtered = newValue.filter { "0123456789 -()".contains($0) }
+                            if filtered != newValue {
+                                phoneNumber = filtered
+                            }
+                        }
+                    
+                    TextField("email".localized, text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .focused($focusedField, equals: .email)
+                }
+                
+                Section("payment_information".localized) {
+                    TextField("hourly_rate".localized, text: $hourlyRate)
+                        .keyboardType(.decimalPad)
+                        .focused($focusedField, equals: .hourlyRate)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: hourlyRate) { _, newValue in
+                            let filtered = newValue.filter { "0123456789.".contains($0) }
+                            if filtered != newValue {
+                                hourlyRate = filtered
+                            }
+                        }
+                    
+                    TextField("other_pays".localized, text: $otherPays)
+                        .keyboardType(.decimalPad)
+                        .focused($focusedField, equals: .otherPays)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onChange(of: otherPays) { _, newValue in
+                            let filtered = newValue.filter { "0123456789.".contains($0) }
+                            if filtered != newValue {
+                                otherPays = filtered
+                            }
+                        }
+                }
+                }
+                .scrollContentBackground(.hidden)
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
             .navigationTitle(isEditMode ? "edit_babysitter".localized : "add_babysitter".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("cancel".localized) {
                         dismiss()
                     }
-                    .foregroundColor(Color.appRed)
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                saveButton
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("save".localized) {
+                        saveBabysitter()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                              phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                              hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
             }
             .sheet(isPresented: $showContactPicker) {
                 ContactPickerView(
@@ -287,7 +398,6 @@ struct AddEditBabysitterView: View {
                 )
             }
             .onAppear {
-                // Setup MapKit search completer
                 searchCompleter.resultTypes = .address
                 searchCompleter.delegate = completerDelegate
                 completerDelegate.onUpdate = { results in
@@ -301,357 +411,11 @@ struct AddEditBabysitterView: View {
                     email = babysitter.email
                     hourlyRate = babysitter.hourlyRate != nil ? String(format: "%.2f", babysitter.hourlyRate!) : ""
                     otherPays = babysitter.otherPays != nil ? String(format: "%.2f", babysitter.otherPays!) : ""
-                    // Don't show suggestions when loading existing address
                     showAddressSuggestions = false
                 }
             }
             .id(localizationManager.currentLanguage)
         }
-    }
-    
-    // MARK: - View Components
-    
-    private var nameField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("name".localized)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Button(action: {
-                    showContactPicker = true
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.crop.circle.badge.plus")
-                            .font(.caption)
-                        Text("from_contacts".localized)
-                            .font(.caption)
-                    }
-                    .foregroundColor(Color.appRed)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.appRed.opacity(0.1))
-                    .cornerRadius(6)
-                }
-            }
-            
-            TextField("name".localized, text: $name)
-                .font(.body)
-                .focused($focusedField, equals: .name)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(showValidationError && name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 2)
-                )
-                .onChange(of: name) { oldValue, newValue in
-                    if showValidationError && !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        // Clear error when user starts typing
-                    }
-                }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(height: 85)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var addressField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("address".localized)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            ZStack(alignment: .topLeading) {
-                TextField("address".localized, text: $address)
-                    .font(.body)
-                    .focused($focusedField, equals: .address)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
-                    .onChange(of: address) { oldValue, newValue in
-                        // Show suggestions if we have existing matches or if user typed enough for MapKit
-                        if !newValue.isEmpty {
-                            let hasExistingMatches = !existingAddresses.filter { $0.localizedCaseInsensitiveContains(newValue) }.isEmpty
-                            
-                            if hasExistingMatches {
-                                showAddressSuggestions = true
-                            } else if newValue.count >= 3 {
-                                // Use MapKit search completer when user types 3+ characters
-                                searchCompleter.queryFragment = newValue
-                                showAddressSuggestions = true
-                            } else {
-                                showAddressSuggestions = false
-                            }
-                        } else {
-                            showAddressSuggestions = false
-                            searchCompleter.queryFragment = ""
-                        }
-                    }
-                    .onChange(of: focusedField) { oldValue, newValue in
-                        if newValue == .address && !address.isEmpty {
-                            showAddressSuggestions = true
-                        } else if newValue != .address {
-                            // Delay hiding to allow tap
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                showAddressSuggestions = false
-                            }
-                        }
-                    }
-                
-                // Address suggestions from MapKit + existing addresses
-                if showAddressSuggestions && !allAddressSuggestions.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(allAddressSuggestions.prefix(5).enumerated()), id: \.element.id) { index, suggestion in
-                            Button(action: {
-                                // Combine title and subtitle for full address
-                                let fullAddress = suggestion.subtitle.isEmpty ? suggestion.title : "\(suggestion.title), \(suggestion.subtitle)"
-                                address = fullAddress
-                                showAddressSuggestions = false
-                                focusedField = nil
-                            }) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(suggestion.title)
-                                        .font(.body)
-                                        .foregroundColor(.primary)
-                                    if !suggestion.subtitle.isEmpty {
-                                        Text(suggestion.subtitle)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(Color(.systemBackground))
-                            }
-                            .buttonStyle(.plain)
-                            
-                            if index < allAddressSuggestions.prefix(5).count - 1 {
-                                Divider()
-                                    .padding(.leading, 12)
-                            }
-                        }
-                    }
-                    .background(Color(.systemBackground))
-                    .cornerRadius(8)
-                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    .padding(.top, 40)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(minHeight: 85)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var phoneField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("phone_number".localized)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            TextField("phone_number".localized, text: $phoneNumber)
-                .keyboardType(.phonePad)
-                .font(.body)
-                .focused($focusedField, equals: .phoneNumber)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(showValidationError && phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.red : Color.clear, lineWidth: 2)
-                )
-                .onChange(of: phoneNumber) { oldValue, newValue in
-                    // Only allow numbers, spaces, dashes, and parentheses
-                    let filtered = newValue.filter { "0123456789 -()".contains($0) }
-                    if filtered != newValue {
-                        phoneNumber = filtered
-                    }
-                    if showValidationError && !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        // Clear error when user starts typing
-                    }
-                }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(height: 85)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var emailField: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("email".localized)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            TextField("email".localized, text: $email)
-                .keyboardType(.emailAddress)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .font(.body)
-                .focused($focusedField, equals: .email)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(showValidationError && !email.isEmpty && !isValidEmail(email) ? Color.red : Color.clear, lineWidth: 2)
-                )
-                .onChange(of: email) { oldValue, newValue in
-                    if showValidationError && (newValue.isEmpty || isValidEmail(newValue)) {
-                        // Clear error when email is empty or becomes valid
-                    }
-                }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(height: 85)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var payFields: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("hourly_rate".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    HStack(spacing: 4) {
-                        TextField("0.00", text: $hourlyRate)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.leading)
-                            .font(.body)
-                            .focused($focusedField, equals: .hourlyRate)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(showValidationError && (hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || Double(hourlyRate.trimmingCharacters(in: .whitespacesAndNewlines)) == nil) ? Color.red : Color.clear, lineWidth: 2)
-                            )
-                            .onChange(of: hourlyRate) { oldValue, newValue in
-                                // Only allow numbers and decimal point
-                                let filtered = newValue.filter { "0123456789.".contains($0) }
-                                if filtered != newValue {
-                                    hourlyRate = filtered
-                                }
-                                if showValidationError && !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && Double(newValue.trimmingCharacters(in: .whitespacesAndNewlines)) != nil {
-                                    // Clear error when user enters valid value
-                                }
-                            }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(width: 0.5)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("extras".localized)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    HStack(spacing: 4) {
-                        TextField("0.00", text: $otherPays)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.leading)
-                            .font(.body)
-                            .focused($focusedField, equals: .otherPays)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                            .onChange(of: otherPays) { oldValue, newValue in
-                                // Only allow numbers and decimal point
-                                let filtered = newValue.filter { "0123456789.".contains($0) }
-                                if filtered != newValue {
-                                    otherPays = filtered
-                                }
-                            }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .frame(height: 85)
-        }
-        .frame(maxWidth: .infinity)
-        .background(
-            Color(uiColor: UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? UIColor.secondarySystemBackground : UIColor.white
-            })
-        )
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    private var saveButton: some View {
-        Button(action: {
-            saveBabysitter()
-        }) {
-            Text("save".localized)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(Color.appRed)
-                .cornerRadius(12)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 20)
-        .padding(.bottom, 20)
-        .background(Color(.systemGroupedBackground))
     }
     
     private func saveBabysitter() {

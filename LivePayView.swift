@@ -816,8 +816,8 @@ struct LivePayView: View {
         selectTextPulseScale = 1.0
         selectTextPulseColor = Color.secondary
         
-        // Create timer that pulses every 5 seconds
-        selectTextPulseTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+        // Create timer that pulses every 10 seconds
+        selectTextPulseTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { _ in
             // Only pulse if still no babysitter selected
             guard !self.canStartLivePay && !self.isLivePayRunning else {
                 self.stopSelectTextPulseTimer()

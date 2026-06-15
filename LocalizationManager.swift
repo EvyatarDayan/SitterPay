@@ -1429,6 +1429,13 @@ class Translations {
             "es": "Información de la niñera",
             "de": "Babysitter-Informationen"
         ],
+        "contact_information": [
+            "en": "Contact Information",
+            "fr": "Coordonnées",
+            "sv": "Kontaktinformation",
+            "es": "Información de contacto",
+            "de": "Kontaktinformationen"
+        ],
         "pending_confirmation": [
             "en": "Pending confirmation",
             "fr": "En attente de confirmation",
